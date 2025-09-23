@@ -36,7 +36,7 @@ public class UserController {
             return ResponseEntity.badRequest().body("Email already in use.");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword())); // hash password
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepo.save(user);
 
         return ResponseEntity.ok(savedUser);
