@@ -29,3 +29,15 @@ CREATE TABLE critica.reviews (
                                  created_at VARCHAR(60),
                                  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES critica.users (idusers)
 );
+
+DROP TABLE IF EXISTS critica.user_details CASCADE;
+
+CREATE TABLE user_details (
+                              id SERIAL PRIMARY KEY,
+                              user_id BIGINT UNIQUE REFERENCES critica.users(idusers) ON DELETE CASCADE,
+                              profile_picture VARCHAR(255),
+                              date_of_birth DATE,
+                              favourite_genre VARCHAR(100),
+                              bio VARCHAR(280),
+                              location VARCHAR(100)
+);
