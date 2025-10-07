@@ -26,10 +26,6 @@ public class UserDetailsController {
     @GetMapping("/{username}")
     public ResponseEntity<?> getDetails(@PathVariable String username){
         Optional<UserDetails> details = userDetailsService.getDetails(username);
-        if(details.isPresent()){
-            return ResponseEntity.ok(details.get());
-        } else {
-            return ResponseEntity.status(404).body("Failed to get user details");
-        }
+        return ResponseEntity.ok(details.orElse(new UserDetails()));
     }
 }

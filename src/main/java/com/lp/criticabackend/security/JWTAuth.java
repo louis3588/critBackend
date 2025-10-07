@@ -37,11 +37,7 @@ public class JWTAuth extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try{
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(new SecretKeySpec(sessionUtil.secretKey.getBytes(), "HmacSHA256"))
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+            Claims claims = sessionUtil.validateToken(token);
 
             String email = claims.getSubject();
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
@@ -49,7 +45,7 @@ public class JWTAuth extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception e){
-            throw new ServletException(e);
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);

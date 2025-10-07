@@ -1,11 +1,11 @@
 -- Schema critica
-DROP SCHEMA IF EXISTS critica CASCADE;
-CREATE SCHEMA critica;
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
 
 -- Users table
-DROP TABLE IF EXISTS critica.users CASCADE;
+DROP TABLE IF EXISTS public.users CASCADE;
 
-CREATE TABLE critica.users (
+CREATE TABLE public.users (
                                idusers SERIAL PRIMARY KEY,
                                first_name VARCHAR(120) NOT NULL,
                                last_name VARCHAR(120),
@@ -16,9 +16,9 @@ CREATE TABLE critica.users (
 );
 
 -- Reviews table
-DROP TABLE IF EXISTS critica.reviews CASCADE;
+DROP TABLE IF EXISTS public.reviews CASCADE;
 
-CREATE TABLE critica.reviews (
+CREATE TABLE public.reviews (
                                  idreviews SERIAL PRIMARY KEY,
                                  user_id INT,
                                  song_id VARCHAR(120) NOT NULL,
@@ -27,14 +27,14 @@ CREATE TABLE critica.reviews (
                                  rating INT DEFAULT 0,
                                  first_listen INT DEFAULT 0,
                                  created_at VARCHAR(60),
-                                 CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES critica.users (idusers)
+                                 CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.users (idusers)
 );
 
-DROP TABLE IF EXISTS critica.user_details CASCADE;
+DROP TABLE IF EXISTS public.user_details CASCADE;
 
-CREATE TABLE user_details (
+CREATE TABLE public.user_details (
                               id SERIAL PRIMARY KEY,
-                              user_id BIGINT UNIQUE REFERENCES critica.users(idusers) ON DELETE CASCADE,
+                              user_id BIGINT UNIQUE REFERENCES public.users(idusers) ON DELETE CASCADE,
                               profile_picture VARCHAR(255),
                               date_of_birth DATE,
                               favourite_genre VARCHAR(100),

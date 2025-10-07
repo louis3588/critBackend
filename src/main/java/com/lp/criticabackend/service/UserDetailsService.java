@@ -30,10 +30,12 @@ public class UserDetailsService {
         User user = getUserByEmail(username);
 
         UserDetails details = userDetailsRepository
-                .findByUser_Username(username)
+                .findByUser(user)
                 .orElse(new UserDetails());
 
-        details.setUser(user);
+        if (details.getUser() == null) {
+            details.setUser(user);
+        }
 
         if(userDetails.getProfilePicture() != null) {
             details.setProfilePicture(userDetails.getProfilePicture());
@@ -59,6 +61,8 @@ public class UserDetailsService {
     }
 
     public Optional<UserDetails> getDetails(String username) {
-        return userDetailsRepository.findByUser_Username(username);
+        return userRepository
+                .findByUsername(username)
+                .flatMap(userDetailsRepository::findByUser);
     }
 }
