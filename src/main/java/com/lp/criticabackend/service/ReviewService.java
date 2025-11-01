@@ -40,8 +40,14 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
-    public void deleteReview(Review review){
-        reviewRepository.delete(review);
+    public boolean deleteReview(Integer reviewId){
+        Optional<Review> review = reviewRepository.findById(reviewId);
+        if (review.isPresent()) {
+            reviewRepository.delete(review.get());
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public Review editReview(Integer reviewId, Review updatedReview){
