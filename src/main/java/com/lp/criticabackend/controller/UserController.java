@@ -48,7 +48,12 @@ public class UserController {
         String email = loginData.get("email");
         String password = loginData.get("password");
 
-        Optional<User> userOpt = userRepo.findByEmail(email);
+        Optional<User> userOpt;
+        if(email.contains("@")){
+            userOpt = userRepo.findByEmail(email);
+        } else {
+            userOpt = userRepo.findByUsername(email);
+        }
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(401).body("Invalid email or password.");
         }
