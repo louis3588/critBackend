@@ -41,3 +41,17 @@ CREATE TABLE public.user_details (
                               bio VARCHAR(280),
                               location VARCHAR(100)
 );
+
+DROP TABLE IF EXISTS public.follows CASCADE;
+
+CREATE TABLE public.follows (
+                                id SERIAL PRIMARY KEY,
+                                follower_id INT NOT NULL,
+                                following_id INT NOT NULL,
+                                status VARCHAR(20),
+                                created_at DATE,
+                                CONSTRAINT fk_follower FOREIGN KEY (follower_id) REFERENCES public.users (idusers) ON DELETE CASCADE,
+                                CONSTRAINT fk_following FOREIGN KEY (following_id) REFERENCES public.users (idusers) ON DELETE CASCADE,
+                                CONSTRAINT unique_follow UNIQUE (follower_id, following_id)
+);
+
