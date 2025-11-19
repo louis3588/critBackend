@@ -35,6 +35,10 @@ public class FollowerService {
         return user.getIdusers();
     }
 
+    public List<User> searchByUsername(String username) {
+        return userRepo.findByUsernameContainingIgnoreCase(username);
+    }
+
     public Follow sendFollowRequest(Integer followerId, Integer followedId) {
         if(followerId.equals(followedId)) {
             log.warn("Someone tried to follow themselves");

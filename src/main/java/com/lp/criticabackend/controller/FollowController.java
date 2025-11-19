@@ -20,6 +20,16 @@ public class FollowController {
         this.followService = followService;
     }
 
+    @GetMapping("/search/{username}")
+    public ResponseEntity<?> searchByUser(@PathVariable String username) {
+        List<User> users = followService.searchByUsername(username);
+        if (users.isEmpty()) {
+            return ResponseEntity.status(401).build();
+        } else {
+            return ResponseEntity.ok(users);
+        }
+    }
+
     @PostMapping("/send")
     public ResponseEntity<?> sendFollow(@RequestParam String followerUsername, @RequestParam String followedUsername) {
         int followerId = followService.getUserIdByUsername(followerUsername);
