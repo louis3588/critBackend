@@ -4,6 +4,7 @@ import com.lp.criticabackend.AppLogger;
 import com.lp.criticabackend.model.Follow;
 import com.lp.criticabackend.model.FollowStatus;
 import com.lp.criticabackend.model.User;
+import com.lp.criticabackend.model.UserDetails;
 import com.lp.criticabackend.repos.FollowRepository;
 import com.lp.criticabackend.repos.UserRepository;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,14 @@ public class FollowerService {
 
     private final FollowRepository followRepo;
     private final UserRepository userRepo;
+    private final UserDetailsService userDetails;
 
     private static final AppLogger log = AppLogger.getLogger(FollowerService.class);
 
-    public FollowerService(FollowRepository followRepo, UserRepository userRepo) {
+    public FollowerService(FollowRepository followRepo, UserRepository userRepo, UserDetailsService userDetails) {
         this.followRepo = followRepo;
         this.userRepo = userRepo;
+        this.userDetails = userDetails;
     }
 
     public int getUserIdByUsername(String username) {
@@ -125,6 +128,21 @@ public class FollowerService {
         response.put("follower", follow.getFollower().getUsername());
         response.put("following", follow.getFollowing().getUsername());
         response.put("status", follow.getStatus().toString());
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<Map<String, Object>> userSuccessFormatter(List<User> users){
+        Map<String, Object> response = new HashMap<>();
+        for(User user : users){
+            String username = user.getUsername();
+            Optional<UserDetails> details = userDetails.getDetails(username);
+            response.put(user.getUsername(), user);
+            if(details.isPresent()) {
+                String detailsHeader = username + " details";
+                response.put(detailsHeader, details.get());
+            }
+        }
+
         return ResponseEntity.ok(response);
     }
 }
