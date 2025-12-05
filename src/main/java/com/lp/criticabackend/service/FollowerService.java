@@ -136,7 +136,7 @@ public class FollowerService {
         for(User user : users){
             String username = user.getUsername();
             Optional<UserDetails> details = userDetails.getDetails(username);
-            response.put(user.getUsername(), user);
+            response.put(user.getUsername(), sanitisedUser(user));
             if(details.isPresent()) {
                 String detailsHeader = username + " details";
                 response.put(detailsHeader, details.get());
@@ -144,5 +144,14 @@ public class FollowerService {
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    private User sanitisedUser(User user){
+        User sanitised = new User();
+        sanitised.setUsername(user.getUsername());
+        sanitised.setEmail(user.getEmail());
+        sanitised.setFirstName(user.getFirstName());
+        sanitised.setLastName(user.getLastName());
+        return sanitised;
     }
 }
