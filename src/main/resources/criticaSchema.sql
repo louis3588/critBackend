@@ -55,3 +55,31 @@ CREATE TABLE public.follows (
                                 CONSTRAINT unique_follow UNIQUE (follower_id, following_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.conversations (
+                                                    id BIGSERIAL PRIMARY KEY,
+                                                    user_one INT NOT NULL,
+                                                    user_two INT NOT NULL,
+                                                    user_min INT GENERATED ALWAYS AS (LEAST(user_one, user_two)) STORED,
+                                                    user_max INT GENERATED ALWAYS AS (GREATEST(user_one, user_two)) STORED,
+                                                    created_at TIMESTAMP,
+                                                    last_updated TIMESTAMP,
+                                                    CONSTRAINT fk_conv_user_one FOREIGN KEY (user_one) REFERENCES public.users (idusers),
+                                                    CONSTRAINT fk_conv_user_two FOREIGN KEY (user_two) REFERENCES public.users (idusers),
+                                                    CONSTRAINT ux_conversation_unique UNIQUE (user_min, user_max)
+);
+
+
+-- Messages
+CREATE TABLE IF NOT EXISTS public.messages (
+                                               id BIGSERIAL PRIMARY KEY,
+                                               conversation_id BIGINT NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+                                               sender_id INT NOT NULL REFERENCES public.users (idusers),
+                                               type VARCHAR(20) NOT NULL,
+                                               content TEXT,
+                                               metadata JSONB,
+                                               created_at TIMESTAMP,
+                                               seen BOOLEAN DEFAULT FALSE,
+                                               deleted BOOLEAN DEFAULT FALSE
+);
+
+
