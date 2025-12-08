@@ -81,7 +81,17 @@ public class FollowerService {
         return followRepo.save(follow);
     }
 
-    public List<User> getPendingRequests(Integer userid){
+    public List<User> getSentPendingRequests(Integer followerId) {
+        User user = userRepo.findById(followerId).orElseThrow(() -> new RuntimeException("Follower not found"));
+
+        return followRepo
+                .findByFollowerAndStatus(user, FollowStatus.PENDING)
+                .stream()
+                .map(Follow::getFollowing)
+                .collect(Collectors.toList());
+    }
+
+    public List<User> getAwaitingPendingRequests(Integer userid){
         User user = userRepo.findById(userid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

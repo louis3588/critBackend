@@ -63,13 +63,23 @@ public class FollowController {
         }
     }
 
-    @GetMapping("/pending/{username}")
+    @GetMapping("/pending/sent/{username}")
     public ResponseEntity<?> getPending(@PathVariable String username) {
         int userId = followService.getUserIdByUsername(username);
         if(userId < 0){
             return ResponseEntity.status(401).build();
         } else {
-            return followService.userSuccessFormatter(followService.getPendingRequests(userId));
+            return followService.userSuccessFormatter(followService.getSentPendingRequests(userId));
+        }
+    }
+
+    @GetMapping("/pending/awaiting/{username}")
+    public ResponseEntity<?> getAwaitPending(@PathVariable String username) {
+        int userId = followService.getUserIdByUsername(username);
+        if(userId < 0){
+            return ResponseEntity.status(401).build();
+        } else {
+            return followService.userSuccessFormatter(followService.getAwaitingPendingRequests(userId));
         }
     }
 
