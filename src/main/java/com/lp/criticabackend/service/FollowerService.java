@@ -4,6 +4,7 @@ import com.lp.criticabackend.AppLogger;
 import com.lp.criticabackend.model.Follow;
 import com.lp.criticabackend.model.FollowStatus;
 import com.lp.criticabackend.model.User;
+import com.lp.criticabackend.model.UserDetails;
 import com.lp.criticabackend.repos.FollowRepository;
 import com.lp.criticabackend.repos.UserRepository;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,14 @@ public class FollowerService {
 
     private final FollowRepository followRepo;
     private final UserRepository userRepo;
+    private final UserDetailsService userDetails;
 
     private static final AppLogger log = AppLogger.getLogger(FollowerService.class);
 
-    public FollowerService(FollowRepository followRepo, UserRepository userRepo) {
+    public FollowerService(FollowRepository followRepo, UserRepository userRepo, UserDetailsService userDetails) {
         this.followRepo = followRepo;
         this.userRepo = userRepo;
+        this.userDetails = userDetails;
     }
 
     public int getUserIdByUsername(String username) {
@@ -78,7 +81,17 @@ public class FollowerService {
         return followRepo.save(follow);
     }
 
-    public List<User> getPendingRequests(Integer userid){
+    public List<User> getSentPendingRequests(Integer followerId) {
+        User user = userRepo.findById(followerId).orElseThrow(() -> new RuntimeException("Follower not found"));
+
+        return followRepo
+                .findByFollowerAndStatus(user, FollowStatus.PENDING)
+                .stream()
+                .map(Follow::getFollowing)
+                .collect(Collectors.toList());
+    }
+
+    public List<User> getAwaitingPendingRequests(Integer userid){
         User user = userRepo.findById(userid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -126,5 +139,29 @@ public class FollowerService {
         response.put("following", follow.getFollowing().getUsername());
         response.put("status", follow.getStatus().toString());
         return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<Map<String, Object>> userSuccessFormatter(List<User> users){
+        Map<String, Object> response = new HashMap<>();
+        for(User user : users){
+            String username = user.getUsername();
+            Optional<UserDetails> details = userDetails.getDetails(username);
+            response.put(user.getUsername(), sanitisedUser(user));
+            if(details.isPresent()) {
+                String detailsHeader = username + " details";
+                response.put(detailsHeader, details.get());
+            }
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    private User sanitisedUser(User user){
+        User sanitised = new User();
+        sanitised.setUsername(user.getUsername());
+        sanitised.setEmail(user.getEmail());
+        sanitised.setFirstName(user.getFirstName());
+        sanitised.setLastName(user.getLastName());
+        return sanitised;
     }
 }

@@ -63,45 +63,55 @@ public class FollowController {
         }
     }
 
-    @GetMapping("/pending/{username}")
-    public ResponseEntity<List<User>> getPending(@PathVariable String username) {
+    @GetMapping("/pending/sent/{username}")
+    public ResponseEntity<?> getPending(@PathVariable String username) {
         int userId = followService.getUserIdByUsername(username);
         if(userId < 0){
             return ResponseEntity.status(401).build();
         } else {
-            return ResponseEntity.ok(followService.getPendingRequests(userId));
+            return followService.userSuccessFormatter(followService.getSentPendingRequests(userId));
+        }
+    }
+
+    @GetMapping("/pending/awaiting/{username}")
+    public ResponseEntity<?> getAwaitPending(@PathVariable String username) {
+        int userId = followService.getUserIdByUsername(username);
+        if(userId < 0){
+            return ResponseEntity.status(401).build();
+        } else {
+            return followService.userSuccessFormatter(followService.getAwaitingPendingRequests(userId));
         }
     }
 
     @GetMapping("/followers/{username}")
-    public ResponseEntity<List<User>> getFollowers(@PathVariable String username) {
+    public ResponseEntity<?> getFollowers(@PathVariable String username) {
         int userId = followService.getUserIdByUsername(username);
         if(userId < 0){
             return ResponseEntity.status(401).build();
         } else {
-            return ResponseEntity.ok(followService.getFollowers(userId));
+            return followService.userSuccessFormatter(followService.getFollowers(userId));
         }
 
     }
 
     @GetMapping("/following/{username}")
-    public ResponseEntity<List<User>> getFollowing(@PathVariable String username) {
+    public ResponseEntity<?> getFollowing(@PathVariable String username) {
         int userId = followService.getUserIdByUsername(username);
         if(userId < 0){
             return ResponseEntity.status(401).build();
         } else {
-            return ResponseEntity.ok(followService.getFollowing(userId));
+            return followService.userSuccessFormatter(followService.getFollowing(userId));
         }
 
     }
 
     @GetMapping("/mutual/{username}")
-    public ResponseEntity<List<User>> getMutuals(@PathVariable String username) {
+    public ResponseEntity<?> getMutuals(@PathVariable String username) {
         int userId = followService.getUserIdByUsername(username);
         if(userId < 0){
             return ResponseEntity.status(401).build();
         } else {
-            return ResponseEntity.ok(followService.getMutuals(userId));
+            return followService.userSuccessFormatter(followService.getMutuals(userId));
         }
 
     }
