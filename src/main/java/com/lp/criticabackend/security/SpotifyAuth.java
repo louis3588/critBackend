@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lp.criticabackend.AppLogger;
 import com.lp.criticabackend.util.WebUtil;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -24,7 +27,9 @@ public class SpotifyAuth {
     private static final HttpClient httpClient = WebUtil.httpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Value("${spotify.client-id}")
     private String clientId;
+    @Value("${spotify.client-secret}")
     private String clientSecret;
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -92,9 +97,20 @@ public class SpotifyAuth {
         }
     }
 
+    @PostConstruct
+    public void init(){
+        log.info("Initializing Spotify Auth, fetching token");
+        getToken();
+    }
 
-
+    @Scheduled(fixedRateString = "3000000")
     public void scheduledRefresh(){
-
+        log.info("proactive Spotify token refresh triggered");
+        lock.writeLock().lock();
+        try{
+            fetchNewToken();
+        }finally {
+            lock.writeLock().unlock();
+        }
     }
 }

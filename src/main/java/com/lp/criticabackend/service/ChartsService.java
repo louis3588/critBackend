@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lp.criticabackend.AppLogger;
 import com.lp.criticabackend.model.Song;
+import com.lp.criticabackend.security.SpotifyAuth;
 import com.lp.criticabackend.util.WebUtil;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -31,8 +32,9 @@ public class ChartsService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final AppLogger log = AppLogger.getLogger(ChartsService.class);
     private static final HttpClient httpClient = WebUtil.httpClient();
-
-    public ChartsService() {
+    private final SpotifyAuth spotifyAuth;
+    public ChartsService(SpotifyAuth spotifyAuth) {
+        this.spotifyAuth = spotifyAuth;
         this.webClient = WebClient
                 .builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
@@ -43,7 +45,6 @@ public class ChartsService {
     public List<Song> fetchCharts(String country){
 
         String url = "https://kworb.net/spotify/country/" + country + "_weekly.html";
-
         String html = webClient
                 .get()
                 .uri(url)
@@ -60,6 +61,7 @@ public class ChartsService {
 
     private List<Song> parseCharts(String html){
         List<Song> songs = new ArrayList<>();
+        String token = spotifyAuth.getToken();
 
         Document doc = Jsoup.parse(html);
         Element table = doc.selectFirst("table");
@@ -91,8 +93,13 @@ public class ChartsService {
                 Song song = new Song(position, title,
                         artists.isEmpty() ? "Unknown Artist" : artists);
 
-                songs.add(new Song(position, title,
-                        artists.isEmpty() ? "Unknown Artist" : artists));
+                if(token != null){
+                    Song fullSong = fetchMetaData(song, token);
+                    songs.add(fullSong);
+                } else {
+                    songs.add(song);
+                }
+
             }
         }
 
