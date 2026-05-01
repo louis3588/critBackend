@@ -1,7 +1,7 @@
 package com.lp.criticabackend.model;
 
 public class Song {
-    private int position;
+    private Integer position;
     private String title;
 
     public String getSpotifyUrl() {
@@ -28,7 +28,7 @@ public class Song {
         this.coverArtUrl = coverArtUrl;
     }
 
-    public int getPosition() {
+    public Integer getPosition() {
         return position;
     }
 
