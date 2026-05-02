@@ -1,16 +1,25 @@
 package com.lp.criticabackend.model;
 
+import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.util.List;
 
+@Entity
+@Table(name = "chart_snapshot",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"country", "date"}))
 public class ChartSnapshot {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable = false)
     private LocalDate date;
 
     private String country;
 
+    @OneToMany(mappedBy = "snapshot", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChartItem> chart;
 
     public LocalDate getDate() {
@@ -42,6 +51,8 @@ public class ChartSnapshot {
         this.country = country;
         this.chart = chart;
     }
+
+    public ChartSnapshot() {}
 
     public Integer getId() {
         return id;

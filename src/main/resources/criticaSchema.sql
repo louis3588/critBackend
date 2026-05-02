@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS public.song (
                                            cover_art_url VARCHAR(512)
 );
 
+-- One row per country per date
 CREATE TABLE IF NOT EXISTS public.chart_snapshot (
                                                      id      SERIAL PRIMARY KEY,
                                                      date    DATE        NOT NULL,
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS public.chart_snapshot (
                                                      CONSTRAINT unique_snapshot UNIQUE (country, date)
 );
 
+-- One row per chart entry per snapshot
 CREATE TABLE IF NOT EXISTS public.chart_item (
                                                  id                SERIAL PRIMARY KEY,
                                                  snapshot_id       INT    NOT NULL REFERENCES public.chart_snapshot(id) ON DELETE CASCADE,
@@ -106,10 +108,10 @@ CREATE TABLE IF NOT EXISTS public.chart_item (
                                                  position          INT,
                                                  position_gain     INT,
                                                  days_charting     INT,
-                                                 day_streams       INT,
-                                                 day_streams_gain  INT,
-                                                 week_streams      INT,
-                                                 week_streams_gain INT,
-                                                 total_streams     INT
+                                                 day_streams       BIGINT,
+                                                 day_streams_gain  BIGINT,
+                                                 week_streams      BIGINT,
+                                                 week_streams_gain BIGINT,
+                                                 total_streams     BIGINT
 );
 

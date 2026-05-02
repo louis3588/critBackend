@@ -97,16 +97,20 @@ public class ChartsService {
                 .toList();
     }
 
-
-
-
-    private Integer parseGainSafe(String raw){
-        if(raw == null || raw.isEmpty()) return null;
-        try{
-            return Integer.parseInt(raw.replace(",", "").replace("+", "").trim());
-        } catch(NumberFormatException e){
-            log.error("Failed to format neg or pos number", e);
+    private Long parseGainSafe(String raw) {
+        if (raw == null || raw.isEmpty()) return null;
+        try {
+            return Long.parseLong(raw.replace(",", "").replace("+", "").trim());
+        } catch (NumberFormatException e) {
+            log.error("Failed to format number: {}", e);
             return null;
+        }
+    }
+
+    private Integer parsePositionSafe(String raw) {
+        if (raw == null || raw.isEmpty()) return null;
+        if(raw.contains("=")){
+            return 0;
         }
     }
 
@@ -144,16 +148,16 @@ public class ChartsService {
                 if (cells.size() < 11) continue;
 
                 int position = Integer.parseInt(cells.get(0).text().trim());
-                Integer positionGain = parseGainSafe(cells.get(1).text().trim());
+                Integer positionGain = parseGainSafe(cells.get(1).text().trim()).intValue();
                 Element titleCell = cells.get(2);
                 String title = extractTitle(titleCell);
                 String artist = extractArtist(titleCell);
-                Integer daysCharting = parseGainSafe(cells.get(3).text());
-                Integer dayStreams      = parseGainSafe(cells.get(6).text());
-                Integer dayStreamsGain  = parseGainSafe(cells.get(7).text());
-                Integer weekStreams     = parseGainSafe(cells.get(8).text());
-                Integer weekStreamsGain = parseGainSafe(cells.get(9).text());
-                Integer totalStreams    = parseGainSafe(cells.get(10).text());
+                Integer daysCharting = parseGainSafe(cells.get(3).text()).intValue();
+                Long dayStreams      = parseGainSafe(cells.get(6).text());
+                Long dayStreamsGain  = parseGainSafe(cells.get(7).text());
+                Long weekStreams     = parseGainSafe(cells.get(8).text());
+                Long weekStreamsGain = parseGainSafe(cells.get(9).text());
+                Long totalStreams    = parseGainSafe(cells.get(10).text());
 
                 Song song;
                 if(token != null){

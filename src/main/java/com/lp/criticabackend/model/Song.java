@@ -1,18 +1,33 @@
 package com.lp.criticabackend.model;
 
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "song")
 public class Song {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(nullable = false)
     private String title;
 
-    public String getSpotifyUrl() {
-        return spotifyUrl;
-    }
+    @Column(nullable = false)
+    private String artist;
 
-    public void setSpotifyUrl(String spotifyUrl) {
-        this.spotifyUrl = spotifyUrl;
-    }
+    private String album;
 
+    @Column(name = "spotify_url", unique = true)
     private String spotifyUrl;
+
+    @Column(name = "cover_art_url")
+    private String coverArtUrl;
+
+    // --- Constructors ---
+
+    public Song() {}
 
     public Song(String title, String artist) {
         this.title = title;
@@ -27,39 +42,23 @@ public class Song {
         this.coverArtUrl = coverArtUrl;
     }
 
-    public String getTitle() {
-        return title;
-    }
+    // --- Getters & Setters ---
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public String getArtist() {
-        return artist;
-    }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public void setArtist(String artist) {
-        this.artist = artist;
-    }
+    public String getArtist() { return artist; }
+    public void setArtist(String artist) { this.artist = artist; }
 
-    public String getAlbum() {
-        return album;
-    }
+    public String getAlbum() { return album; }
+    public void setAlbum(String album) { this.album = album; }
 
-    public void setAlbum(String album) {
-        this.album = album;
-    }
+    public String getSpotifyUrl() { return spotifyUrl; }
+    public void setSpotifyUrl(String spotifyUrl) { this.spotifyUrl = spotifyUrl; }
 
-    public String getCoverArtUrl() {
-        return coverArtUrl;
-    }
-
-    public void setCoverArtUrl(String coverArtUrl) {
-        this.coverArtUrl = coverArtUrl;
-    }
-
-    private String artist;
-    private String album;
-    private String coverArtUrl;
+    public String getCoverArtUrl() { return coverArtUrl; }
+    public void setCoverArtUrl(String coverArtUrl) { this.coverArtUrl = coverArtUrl; }
 }
