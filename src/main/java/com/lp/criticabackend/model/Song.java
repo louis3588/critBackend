@@ -1,7 +1,7 @@
 package com.lp.criticabackend.model;
 
 public class Song {
-    private Integer position;
+
     private String title;
 
     public String getSpotifyUrl() {
@@ -14,8 +14,7 @@ public class Song {
 
     private String spotifyUrl;
 
-    public Song(int position, String title, String artist) {
-        this.position = position;
+    public Song(String title, String artist) {
         this.title = title;
         this.artist = artist;
     }
@@ -26,14 +25,6 @@ public class Song {
         this.artist = artist;
         this.album = album;
         this.coverArtUrl = coverArtUrl;
-    }
-
-    public Integer getPosition() {
-        return position;
-    }
-
-    public void setPosition(int position) {
-        this.position = position;
     }
 
     public String getTitle() {
