@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
                                                deleted BOOLEAN DEFAULT FALSE
 );
 
--- Deduplicated songs, keyed by spotify_url as the natural unique identifier
+DROP TABLE IF EXISTS public.song CASCADE;
 CREATE TABLE IF NOT EXISTS public.song (
                                            id            SERIAL PRIMARY KEY,
                                            title         VARCHAR(255) NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS public.song (
                                            cover_art_url VARCHAR(512)
 );
 
--- One row per country per date
+DROP TABLE IF EXISTS public.chart_snapshot CASCADE;
 CREATE TABLE IF NOT EXISTS public.chart_snapshot (
                                                      id      SERIAL PRIMARY KEY,
                                                      date    DATE        NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS public.chart_snapshot (
                                                      CONSTRAINT unique_snapshot UNIQUE (country, date)
 );
 
--- One row per chart entry per snapshot
+DROP TABLE IF EXISTS public.chart_item CASCADE;
 CREATE TABLE IF NOT EXISTS public.chart_item (
                                                  id                SERIAL PRIMARY KEY,
                                                  snapshot_id       INT    NOT NULL REFERENCES public.chart_snapshot(id) ON DELETE CASCADE,

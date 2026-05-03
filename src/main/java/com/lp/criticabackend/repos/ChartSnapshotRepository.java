@@ -13,7 +13,7 @@ public interface ChartSnapshotRepository extends JpaRepository<ChartSnapshot, In
 
     Optional<ChartSnapshot> findByCountryAndDate(String country, LocalDate date);
     List<ChartSnapshot> findByCountryOrderByDateDesc(String country);
-
+    Optional<ChartSnapshot> findTopByCountryOrderByDateDesc(String country);
     List<ChartSnapshot> findByCountryAndDateBetweenOrderByDateDesc(
             String country, LocalDate from, LocalDate to);
 }

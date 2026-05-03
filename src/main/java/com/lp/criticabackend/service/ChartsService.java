@@ -8,9 +8,6 @@ import com.lp.criticabackend.model.ChartSnapshot;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.security.SpotifyAuth;
 import com.lp.criticabackend.util.WebUtil;
-import io.netty.channel.ChannelOption;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -20,14 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class ChartsService {
@@ -58,7 +50,7 @@ public class ChartsService {
     }
 
     private String fetchHtml(String country){
-        String url = "https://kworb.net/spotify/country/" + country + "_weekly.html";
+        String url = "https://kworb.net/spotify/country/global_daily.html";
         String html = webClient
                 .get()
                 .uri(url)
@@ -74,19 +66,7 @@ public class ChartsService {
     }
 
     public List<Song> fetchCharts(String country){
-
-        String url = "https://kworb.net/spotify/country/" + country + "_weekly.html";
-        String html = webClient
-                .get()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
-
-        if(html == null || html.isEmpty()){
-            log.warn("Failed to fetch charts");
-        }
-
+        String html = fetchHtml(country);
         return parseCharts(html);
     }
 
@@ -107,10 +87,19 @@ public class ChartsService {
         }
     }
 
-    private Integer parsePositionSafe(String raw) {
+    private Integer parsePositionSafe(String raw, Integer position) {
         if (raw == null || raw.isEmpty()) return null;
         if(raw.contains("=")){
             return 0;
+        }
+        if(raw.contains("RE") || raw.contains("NEW")){
+            return 201 - position;
+        }
+        try {
+            return Integer.parseInt(raw.replace("+", "").trim());
+        } catch (NumberFormatException e) {
+            log.error("Failed to parse position gain: {}", e);
+            return null;
         }
     }
 
@@ -145,23 +134,27 @@ public class ChartsService {
         for (Element row : rows) {
             try{
                 Elements cells = row.select("td");
-                if (cells.size() < 11) continue;
 
                 int position = Integer.parseInt(cells.get(0).text().trim());
-                Integer positionGain = parseGainSafe(cells.get(1).text().trim()).intValue();
+                Integer positionGain = parsePositionSafe(cells.get(1).text().trim(), position);
                 Element titleCell = cells.get(2);
                 String title = extractTitle(titleCell);
                 String artist = extractArtist(titleCell);
-                Integer daysCharting = parseGainSafe(cells.get(3).text()).intValue();
-                Long dayStreams      = parseGainSafe(cells.get(6).text());
-                Long dayStreamsGain  = parseGainSafe(cells.get(7).text());
-                Long weekStreams     = parseGainSafe(cells.get(8).text());
-                Long weekStreamsGain = parseGainSafe(cells.get(9).text());
-                Long totalStreams    = parseGainSafe(cells.get(10).text());
+                String trackId = extractTrackId(titleCell);
+
+                Integer daysCharting = parsePositionSafe(cells.get(3).text(), position);
+                Element peakCountCell = row.selectFirst("td.mini.text");
+                int streamsOffset = peakCountCell != null ? 0 : -1;
+
+                Long dayStreams      = parseGainSafe(cells.get(6 + streamsOffset).text());
+                Long dayStreamsGain  = parseGainSafe(cells.get(7 + streamsOffset).text());
+                Long weekStreams     = parseGainSafe(cells.get(8 + streamsOffset).text());
+                Long weekStreamsGain = parseGainSafe(cells.get(9 + streamsOffset).text());
+                Long totalStreams    = parseGainSafe(cells.get(10 + streamsOffset).text());
 
                 Song song;
                 if(token != null){
-                    song = fetchMetaData(new Song(title, artist), token);
+                    song = fetchMetaData(new Song(title, artist), trackId, token);
                 } else {
                     song = new Song(title, artist);
                 }
@@ -187,55 +180,52 @@ public class ChartsService {
         return chartItems;
     }
 
-    private Song fetchMetaData(Song song, String token){
-        try{
-            String query = "track:" + song.getTitle() + " artist:" + song.getArtist();
-            String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
-            String searchUri = "https://api.spotify.com/v1/search?q=" + encodedQuery + "&type=track&limit=1";
+    private String extractTrackId(Element titleCell){
+        Element titleEl = titleCell.selectFirst("a[href*=track]");
+        if(titleEl == null){
+            log.warn("Failed to extract trackId");
+            return "";
+        } String href = titleEl.attr("href");
+        String filename = href.substring(href.lastIndexOf("/") + 1);
+        return filename.replace(".html", "");
+    }
+
+    private Song fetchMetaData(Song song, String trackId,String token){
+        song.setSpotifyUrl(trackId);
+        try {
+            String trackUri = "https://api.spotify.com/v1/tracks/" + trackId;
 
             String res = webClient
                     .get()
-                    .uri(searchUri)
+                    .uri(trackUri)
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
 
             if (res == null || res.isEmpty()) {
-                log.error("Empty Spotify response");
+                log.error("Empty Spotify response for track: {}" + trackId);
                 return song;
-            }else {
-                JsonNode json = objectMapper.readTree(res);
-                JsonNode tracks = json.path("tracks");
-                JsonNode items = tracks.path("items");
-
-                if(items.isEmpty()){
-                    log.warn("Failed to find items for song:" + song.getTitle());
-                    return song;
-                }
-
-                JsonNode track = items.get(0);
-                JsonNode album = track.path("album");
-
-                // Spotify URL
-                String spotifyUrl = track.path("external_urls").path("spotify").asText(null);
-                if (spotifyUrl != null) song.setSpotifyUrl(spotifyUrl);
-
-                String albumName = album.path("name").asText(null);
-                if (albumName != null) song.setAlbum(albumName);
-
-                JsonNode images = album.path("images");
-                if (!images.isEmpty()) {
-                    String coverUrl = images.get(0).path("url").asText(null);
-                    if (coverUrl != null) song.setCoverArtUrl(coverUrl);
-                }
-
             }
-        }catch(Exception e){
-            log.error("Failed to fetch meta data", e);
-            return song;
-        }
 
+            JsonNode track = objectMapper.readTree(res);
+            JsonNode album = track.path("album");
+
+            String spotifyUrl = track.path("external_urls").path("spotify").asText(null);
+            if (spotifyUrl != null) song.setSpotifyUrl(spotifyUrl);
+
+            String albumName = album.path("name").asText(null);
+            if (albumName != null) song.setAlbum(albumName);
+
+            JsonNode images = album.path("images");
+            if (!images.isEmpty()) {
+                String coverUrl = images.get(0).path("url").asText(null);
+                if (coverUrl != null) song.setCoverArtUrl(coverUrl);
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to fetch metadata for track "+  trackId, e);
+        }
         return song;
     }
 }
