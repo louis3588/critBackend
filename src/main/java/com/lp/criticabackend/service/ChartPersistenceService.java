@@ -39,7 +39,7 @@ public class ChartPersistenceService {
     @PostConstruct
     @Scheduled(cron = "0 0 0 * * *") // midnight every day
     public void syncDailySnapshots() {
-        List<String> countries = List.of("global", "gb", "us"); // extend as needed
+        List<String> countries = List.of("global");
         countries.forEach(this::syncCountry);
     }
 

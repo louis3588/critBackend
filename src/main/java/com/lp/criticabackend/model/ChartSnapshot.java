@@ -3,6 +3,7 @@ package com.lp.criticabackend.model;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -49,7 +50,8 @@ public class ChartSnapshot {
     public ChartSnapshot(LocalDate date, String country, List<ChartItem> chart) {
         this.date = date;
         this.country = country;
-        this.chart = chart;
+        this.chart = new ArrayList<>();
+        chart.forEach(this::addItem);
     }
 
     public ChartSnapshot() {}
@@ -60,5 +62,10 @@ public class ChartSnapshot {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public void addItem(ChartItem item) {
+        item.setSnapshot(this);
+        this.chart.add(item);
     }
 }

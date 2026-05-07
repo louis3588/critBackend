@@ -15,11 +15,14 @@ import org.jsoup.select.Elements;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+
 import reactor.netty.http.client.HttpClient;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
 
 @Service
 public class ChartsService {
@@ -29,6 +32,7 @@ public class ChartsService {
     private static final AppLogger log = AppLogger.getLogger(ChartsService.class);
     private static final HttpClient httpClient = WebUtil.httpClient();
     private final SpotifyAuth spotifyAuth;
+
     public ChartsService(SpotifyAuth spotifyAuth) {
         this.spotifyAuth = spotifyAuth;
         this.webClient = WebClient
@@ -129,9 +133,12 @@ public class ChartsService {
             return chartItems;
         }
 
-        Elements rows = table.select("tbody tr");
+        int count = 0;
 
+        Elements rows = table.select("tbody tr");
         for (Element row : rows) {
+            count++;
+            log.debug("Processing track "+ count);
             try{
                 Elements cells = row.select("td");
 
@@ -152,11 +159,11 @@ public class ChartsService {
                 Long weekStreamsGain = parseGainSafe(cells.get(9 + streamsOffset).text());
                 Long totalStreams    = parseGainSafe(cells.get(10 + streamsOffset).text());
 
-                Song song;
-                if(token != null){
-                    song = fetchMetaData(new Song(title, artist), trackId, token);
-                } else {
-                    song = new Song(title, artist);
+                Song song = new Song(title, artist);
+
+                if (token != null && !token.isEmpty()) {
+                    song = fetchMetaData(song, trackId, token);
+                    Thread.sleep(8500);
                 }
 
                 ChartItem item = new ChartItem(
@@ -174,9 +181,10 @@ public class ChartsService {
                 chartItems.add(item);
 
             } catch (Exception e) {
-                log.warn("Skipping malformed row " + e.getMessage());
+                log.warn("Skipping malformed row: " + e.getMessage());
             }
         }
+
         return chartItems;
     }
 
@@ -190,10 +198,12 @@ public class ChartsService {
         return filename.replace(".html", "");
     }
 
-    private Song fetchMetaData(Song song, String trackId,String token){
-        song.setSpotifyUrl(trackId);
+    private Song fetchMetaData(Song song, String trackId, String token) {
+
         try {
-            String trackUri = "https://api.spotify.com/v1/tracks/" + trackId;
+            log.debug("Fetching " + trackId);
+            String trackUri =
+                    "https://api.spotify.com/v1/tracks/" + trackId;
 
             String res = webClient
                     .get()
@@ -204,28 +214,58 @@ public class ChartsService {
                     .block();
 
             if (res == null || res.isEmpty()) {
-                log.error("Empty Spotify response for track: {}" + trackId);
                 return song;
             }
 
             JsonNode track = objectMapper.readTree(res);
+
             JsonNode album = track.path("album");
 
-            String spotifyUrl = track.path("external_urls").path("spotify").asText(null);
-            if (spotifyUrl != null) song.setSpotifyUrl(spotifyUrl);
+            song.setSpotifyUrl(
+                    track.path("external_urls")
+                            .path("spotify")
+                            .asText(null)
+            );
 
-            String albumName = album.path("name").asText(null);
-            if (albumName != null) song.setAlbum(albumName);
+            song.setAlbum(album.path("name").asText(null));
+            String albumString = album.path("name").asText(null);
 
+            if (albumString != null) {
+                log.debug("Found album: " + albumString);
+            }
             JsonNode images = album.path("images");
+
             if (!images.isEmpty()) {
-                String coverUrl = images.get(0).path("url").asText(null);
-                if (coverUrl != null) song.setCoverArtUrl(coverUrl);
+                song.setCoverArtUrl(
+                        images.get(0).path("url").asText(null)
+                );
             }
 
+        } catch (WebClientResponseException.TooManyRequests e) {
+
+            String retryAfter =
+                    e.getHeaders().getFirst("Retry-After");
+
+            long waitSeconds =
+                    retryAfter != null
+                            ? Long.parseLong(retryAfter)
+                            : 10;
+
+            log.warn("Rate limited. Waiting "+ waitSeconds);
+
+            try {
+                Thread.sleep(waitSeconds * 1000);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            return fetchMetaData(song, trackId, token);
+
         } catch (Exception e) {
-            log.error("Failed to fetch metadata for track "+  trackId, e);
+
+            log.error("Failed to fetch metadata for + " + trackId, e);
         }
+
         return song;
     }
 }
