@@ -3,12 +3,6 @@ package com.lp.criticabackend;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Central logging utility for consistent, class-based logs.
- * Example:
- *   private static final AppLogger log = AppLogger.getLogger(MyClass.class);
- *   log.info("User logged in successfully");
- */
 public class AppLogger {
 
     private final Logger logger;

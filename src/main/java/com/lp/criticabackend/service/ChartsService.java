@@ -22,6 +22,9 @@ import reactor.netty.http.client.HttpClient;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 @Service
@@ -32,6 +35,8 @@ public class ChartsService {
     private static final AppLogger log = AppLogger.getLogger(ChartsService.class);
     private static final HttpClient httpClient = WebUtil.httpClient();
     private final SpotifyAuth spotifyAuth;
+    private final ExecutorService spotifyExe = Executors.newFixedThreadPool(5);
+
 
     public ChartsService(SpotifyAuth spotifyAuth) {
         this.spotifyAuth = spotifyAuth;
@@ -160,11 +165,7 @@ public class ChartsService {
                 Long totalStreams    = parseGainSafe(cells.get(10 + streamsOffset).text());
 
                 Song song = new Song(title, artist);
-
-                if (token != null && !token.isEmpty()) {
-                    song = fetchMetaData(song, trackId, token);
-                    Thread.sleep(8500);
-                }
+                song.setSpotifyUrl(trackId);
 
                 ChartItem item = new ChartItem(
                         position,
@@ -185,7 +186,42 @@ public class ChartsService {
             }
         }
 
+        if(token != null && !token.isEmpty()){
+            List<List<ChartItem>> batches = partitionBatches(chartItems);
+
+            for(List<ChartItem> batch : batches){
+                List<CompletableFuture<Void>> futures = batch
+                        .stream()
+                        .map(item -> CompletableFuture.runAsync(new Runnable() {
+                            @Override
+                            public void run() {
+                                Song song = item.getSong();
+                                if(!song.getSpotifyUrl().isEmpty()){
+                                    Song enriched = fetchMetaData(song, song.getSpotifyUrl(), token);
+                                    item.setSong(enriched);
+                                }
+                            }
+                        }, spotifyExe))
+                        .toList();
+
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                try{
+                    Thread.sleep(2000);
+                }catch (InterruptedException e){
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
         return chartItems;
+    }
+
+    private List<List<ChartItem>> partitionBatches(List<ChartItem> list){
+        List<List<ChartItem>> partitions = new ArrayList<>();
+        for (int i = 0; i < list.size(); i+= 5) {
+            partitions.add(list.subList(i, Math.min(i + 5, list.size())));
+        }
+        return partitions;
     }
 
     private String extractTrackId(Element titleCell){
