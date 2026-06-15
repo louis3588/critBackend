@@ -1,6 +1,7 @@
 package com.lp.criticabackend.service;
 
 import com.lp.criticabackend.AppLogger;
+import com.lp.criticabackend.model.ChartItem;
 import com.lp.criticabackend.model.ChartSnapshot;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.repos.ChartSnapshotRepository;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +24,7 @@ public class ChartPersistenceService {
     private final SongRepository songRepository;
     private final ChartsService chartsService;
     private static final AppLogger log = AppLogger.getLogger(ChartPersistenceService.class);
+    private static final String global = "global";
 
     public ChartPersistenceService(ChartSnapshotRepository snapshotRepository,
                                    SongRepository songRepository,
@@ -39,7 +42,7 @@ public class ChartPersistenceService {
     @PostConstruct
     @Scheduled(cron = "0 0 0 * * *") // midnight every day
     public void syncDailySnapshots() {
-        List<String> countries = List.of("global");
+        List<String> countries = List.of(global);
         countries.forEach(this::syncCountry);
     }
 
@@ -56,6 +59,32 @@ public class ChartPersistenceService {
 
         log.info("No snapshot for {} today ({}), fetching.. " + country);
         fetchAndSave(country);
+    }
+
+    public List<ChartItem> getChart(LocalDate date){
+        if(snapshotRepository.countAll() > 0){
+            if(snapshotRepository.existsByCountryAndDate(global, date)){
+                Optional<ChartSnapshot> snapshotOptional = snapshotRepository.findByCountryAndDate(global, date);
+                if(snapshotOptional.isPresent()){
+                    return snapshotOptional
+                            .get()
+                            .getChart();
+                } else {
+                    return new ArrayList<>();
+                }
+            } else {
+                Optional<ChartSnapshot> snapshotOptional = snapshotRepository.findTopByCountryOrderByDateDesc(global);
+                if(snapshotOptional.isPresent()){
+                    return snapshotOptional
+                            .get()
+                            .getChart();
+                } else {
+                    return new ArrayList<>();
+                }
+            }
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     private void fetchAndSave(String country) {
