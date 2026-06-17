@@ -11,10 +11,10 @@ import java.util.concurrent.TimeUnit;
 
 public class WebUtil {
 
-    public static HttpClient httpClient(int timeout){
-        int timeoutMillis = timeout * 1000;
+    public static HttpClient httpClient(){
+        int timeout = 25000;
         return HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeout)
                 .responseTimeout(Duration.ofMillis(timeout))
                 .doOnConnected(conn -> {
                     conn

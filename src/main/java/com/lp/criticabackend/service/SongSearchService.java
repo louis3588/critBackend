@@ -23,7 +23,7 @@ public class SongSearchService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final SpotifyAuth spotifyAuth;
     private static final AppLogger log = AppLogger.getLogger(SongSearchService.class);
-    private static final HttpClient httpClient = WebUtil.httpClient(25);
+    private static final HttpClient httpClient = WebUtil.httpClient();
 
 
     public SongSearchService(SpotifyAuth spotifyAuth) {

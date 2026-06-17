@@ -1,6 +1,7 @@
 package com.lp.criticabackend.controller;
 
 import com.lp.criticabackend.model.ChartItem;
+import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.service.ChartPersistenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class ChartController {
     @GetMapping("/latest")
     public ResponseEntity<?> getLatestChart(){
         LocalDate today = LocalDate.now();
-        List<ChartItem> chart = chartPersistenceService.getChart(today);
+        List<Song> chart = chartPersistenceService.getChartedSongs(today);
         if(chart.isEmpty()){
             return ResponseEntity.noContent().build();
         } else {
