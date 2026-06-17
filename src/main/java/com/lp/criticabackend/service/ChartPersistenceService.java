@@ -61,8 +61,15 @@ public class ChartPersistenceService {
         fetchAndSave(country);
     }
 
-    public List<ChartItem> getChart(LocalDate date){
-        if(snapshotRepository.countAll() > 0){
+    public List<Song> getChartedSongs(LocalDate date){
+        return getChart(date)
+                .stream()
+                .map(ChartItem::getSong)
+                .toList();
+    }
+
+    private List<ChartItem> getChart(LocalDate date){
+        if(snapshotRepository.count() > 0L){
             if(snapshotRepository.existsByCountryAndDate(global, date)){
                 Optional<ChartSnapshot> snapshotOptional = snapshotRepository.findByCountryAndDate(global, date);
                 if(snapshotOptional.isPresent()){
