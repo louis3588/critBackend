@@ -33,7 +33,7 @@ public class ChartsService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final AppLogger log = AppLogger.getLogger(ChartsService.class);
-    private static final HttpClient httpClient = WebUtil.httpClient();
+    private static final HttpClient httpClient = WebUtil.httpClient(15);
     private final SpotifyAuth spotifyAuth;
     private final ExecutorService spotifyExe = Executors.newFixedThreadPool(5);
 

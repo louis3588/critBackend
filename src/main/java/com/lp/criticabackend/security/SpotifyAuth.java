@@ -24,7 +24,7 @@ public class SpotifyAuth {
 
     private static final AppLogger log = AppLogger.getLogger(SpotifyAuth.class);
     private final WebClient webClient;
-    private static final HttpClient httpClient = WebUtil.httpClient();
+    private static final HttpClient httpClient = WebUtil.httpClient(15);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${spotify.client-id}")
