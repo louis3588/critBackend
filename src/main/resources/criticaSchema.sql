@@ -82,4 +82,36 @@ CREATE TABLE IF NOT EXISTS public.messages (
                                                deleted BOOLEAN DEFAULT FALSE
 );
 
+DROP TABLE IF EXISTS public.song CASCADE;
+CREATE TABLE IF NOT EXISTS public.song (
+                                           id            SERIAL PRIMARY KEY,
+                                           title         VARCHAR(255) NOT NULL,
+                                           artist        VARCHAR(255) NOT NULL,
+                                           album         VARCHAR(255),
+                                           spotify_url   VARCHAR(512) UNIQUE,
+                                           cover_art_url VARCHAR(512)
+);
+
+DROP TABLE IF EXISTS public.chart_snapshot CASCADE;
+CREATE TABLE IF NOT EXISTS public.chart_snapshot (
+                                                     id      SERIAL PRIMARY KEY,
+                                                     date    DATE        NOT NULL,
+                                                     country VARCHAR(10) NOT NULL,
+                                                     CONSTRAINT unique_snapshot UNIQUE (country, date)
+);
+
+DROP TABLE IF EXISTS public.chart_item CASCADE;
+CREATE TABLE IF NOT EXISTS public.chart_item (
+                                                 id                SERIAL PRIMARY KEY,
+                                                 snapshot_id       INT    NOT NULL REFERENCES public.chart_snapshot(id) ON DELETE CASCADE,
+                                                 song_id           INT    NOT NULL REFERENCES public.song(id),
+                                                 position          INT,
+                                                 position_gain     INT,
+                                                 days_charting     INT,
+                                                 day_streams       BIGINT,
+                                                 day_streams_gain  BIGINT,
+                                                 week_streams      BIGINT,
+                                                 week_streams_gain BIGINT,
+                                                 total_streams     BIGINT
+);
 
