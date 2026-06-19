@@ -1,10 +1,12 @@
 package com.lp.criticabackend.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "song")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Song {
 
     @Id

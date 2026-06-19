@@ -1,9 +1,12 @@
 package com.lp.criticabackend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "chart_item")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ChartItem {
 
     @Id
@@ -12,9 +15,10 @@ public class ChartItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "snapshot_id", nullable = false)
+    @JsonIgnore
     private ChartSnapshot snapshot;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "song_id", nullable = false)
     private Song song;
 
