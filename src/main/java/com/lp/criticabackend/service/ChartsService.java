@@ -277,6 +277,9 @@ public class ChartsService {
                 );
             }
 
+            song.setReleaseDate(album.path("release_date").asText(null));
+            song.setPopularity(track.path("popularity").asInt(0));
+
         } catch (WebClientResponseException.TooManyRequests e) {
 
             String retryAfter =

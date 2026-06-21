@@ -27,6 +27,12 @@ public class Song {
     @Column(name = "cover_art_url")
     private String coverArtUrl;
 
+    @Column(name = "release_date")
+    private String releaseDate;
+
+    @Column(name = "popularity")
+    private Integer popularity;
+
     // --- Constructors ---
 
     public Song() {}
@@ -43,8 +49,6 @@ public class Song {
         this.album = album;
         this.coverArtUrl = coverArtUrl;
     }
-
-    // --- Getters & Setters ---
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -63,4 +67,10 @@ public class Song {
 
     public String getCoverArtUrl() { return coverArtUrl; }
     public void setCoverArtUrl(String coverArtUrl) { this.coverArtUrl = coverArtUrl; }
+
+    public String getReleaseDate() { return releaseDate; }
+    public void setReleaseDate(String releaseDate) { this.releaseDate = releaseDate; }
+
+    public Integer getPopularity() { return popularity; }
+    public void setPopularity(Integer popularity) { this.popularity = popularity; }
 }
