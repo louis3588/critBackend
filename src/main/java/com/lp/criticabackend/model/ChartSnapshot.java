@@ -1,5 +1,6 @@
 package com.lp.criticabackend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -9,6 +10,7 @@ import java.util.List;
 @Entity
 @Table(name = "chart_snapshot",
         uniqueConstraints = @UniqueConstraint(columnNames = {"country", "date"}))
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ChartSnapshot {
 
     @Id
