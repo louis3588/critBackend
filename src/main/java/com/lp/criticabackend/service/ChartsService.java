@@ -216,9 +216,9 @@ public class ChartsService {
         return chartItems;
     }
 
-    private List<List<ChartItem>> partitionBatches(List<ChartItem> list){
-        List<List<ChartItem>> partitions = new ArrayList<>();
-        for (int i = 0; i < list.size(); i+= 5) {
+    public <T> List<List<T>> partitionBatches(List<T> list) {
+        List<List<T>> partitions = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += 5) {
             partitions.add(list.subList(i, Math.min(i + 5, list.size())));
         }
         return partitions;
@@ -255,6 +255,18 @@ public class ChartsService {
 
             JsonNode track = objectMapper.readTree(res);
 
+            if(song == null){
+                String title = track.path("name").asText("Unknown Track");
+
+                JsonNode artists = track.path("artists");
+                String artist = artists
+                        .isEmpty()
+                        ? "Unknown Artist"
+                        : artists.get(0).path("name").asText("Unknown Artist");
+
+                song = new Song(title, artist);
+            }
+
             JsonNode album = track.path("album");
 
             song.setSpotifyUrl(
@@ -279,6 +291,7 @@ public class ChartsService {
 
             song.setReleaseDate(album.path("release_date").asText(null));
             song.setPopularity(track.path("popularity").asInt(0));
+            song.setAlbumId(album.path("id").asText(null));
 
         } catch (WebClientResponseException.TooManyRequests e) {
 

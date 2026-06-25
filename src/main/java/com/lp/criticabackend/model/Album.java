@@ -55,9 +55,18 @@ public class Album {
         this.songs = songs;
     }
 
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
+
     private String artist;
     private String imageUrl;
     private String releaseDate;
+    private Double averageRating;
 
     List<Song> songs;
 }
