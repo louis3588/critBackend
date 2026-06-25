@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/search")
+@RequestMapping("/api/search")
 public class SearchController {
 
     private final SongSearchService songSearchService;
@@ -21,7 +21,7 @@ public class SearchController {
         this.songSearchService = songSearchService;
     }
 
-    @GetMapping
+    @GetMapping("/song")
     public ResponseEntity<?> search(@RequestParam String query, @RequestParam String limit) {
         List<Song> results = songSearchService.search(query, limit);
         if (results.isEmpty()) {
