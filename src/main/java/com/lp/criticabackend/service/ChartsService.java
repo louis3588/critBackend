@@ -234,7 +234,7 @@ public class ChartsService {
         return filename.replace(".html", "");
     }
 
-    private Song fetchMetaData(Song song, String trackId, String token) {
+    public Song fetchMetaData(Song song, String trackId, String token) {
 
         try {
             log.debug("Fetching " + trackId);

@@ -3,6 +3,7 @@ package com.lp.criticabackend.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lp.criticabackend.AppLogger;
+import com.lp.criticabackend.model.Album;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.security.SpotifyAuth;
 import com.lp.criticabackend.util.WebUtil;
@@ -24,10 +25,12 @@ public class SongSearchService {
     private final SpotifyAuth spotifyAuth;
     private static final AppLogger log = AppLogger.getLogger(SongSearchService.class);
     private static final HttpClient httpClient = WebUtil.httpClient();
+    private final ChartsService chartsService;
 
 
-    public SongSearchService(SpotifyAuth spotifyAuth) {
+    public SongSearchService(SpotifyAuth spotifyAuth, ChartsService chartsService) {
         this.spotifyAuth = spotifyAuth;
+        this.chartsService = chartsService;
         this.webClient = WebClient
                 .builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
@@ -98,5 +101,10 @@ public class SongSearchService {
             }
         }
         return results;
+    }
+
+    public Album getAlbumFromSong(Song song) {
+        Album album = new Album();
+
     }
 }

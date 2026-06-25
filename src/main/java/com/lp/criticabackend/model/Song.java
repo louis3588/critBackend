@@ -33,6 +33,9 @@ public class Song {
     @Column(name = "popularity")
     private Integer popularity;
 
+    @Column(name = "album_id")
+    private String albumId;
+
     // --- Constructors ---
 
     public Song() {}
@@ -73,4 +76,12 @@ public class Song {
 
     public Integer getPopularity() { return popularity; }
     public void setPopularity(Integer popularity) { this.popularity = popularity; }
+
+    public String getAlbumId() {
+        return albumId;
+    }
+
+    public void setAlbumId(String albumId) {
+        this.albumId = albumId;
+    }
 }
