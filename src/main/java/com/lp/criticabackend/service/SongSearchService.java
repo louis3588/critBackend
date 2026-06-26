@@ -3,7 +3,9 @@ package com.lp.criticabackend.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lp.criticabackend.AppLogger;
+import com.lp.criticabackend.model.Album;
 import com.lp.criticabackend.model.Song;
+import com.lp.criticabackend.repos.SongRepository;
 import com.lp.criticabackend.security.SpotifyAuth;
 import com.lp.criticabackend.util.WebUtil;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -15,6 +17,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class SongSearchService {
@@ -22,16 +28,33 @@ public class SongSearchService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final SpotifyAuth spotifyAuth;
+    private final SongRepository songRepository;
     private static final AppLogger log = AppLogger.getLogger(SongSearchService.class);
     private static final HttpClient httpClient = WebUtil.httpClient();
+    private final ChartsService chartsService;
+    private final ExecutorService spotifyExe = Executors.newFixedThreadPool(5);
 
 
-    public SongSearchService(SpotifyAuth spotifyAuth) {
+    public SongSearchService(SpotifyAuth spotifyAuth, SongRepository songRepository, ChartsService chartsService) {
         this.spotifyAuth = spotifyAuth;
+        this.songRepository = songRepository;
+        this.chartsService = chartsService;
         this.webClient = WebClient
                 .builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
+    }
+
+    private Song getByUrl(String url, String token) {
+        Optional<Song> songOptional = songRepository.findSongBySpotifyUrl(url);
+        if (songOptional.isPresent()) {
+            return songOptional.get();
+        } else {
+            Song song = new Song();
+            int index = url.lastIndexOf("/");
+            String trackId = url.substring(index + 1);
+            return chartsService.fetchMetaData(song, trackId, token);
+        }
     }
 
     public List<Song> search(String query, String limit) {
@@ -90,7 +113,7 @@ public class SongSearchService {
                             ? ""
                             : albumObj.path("images").get(0).path("url").asText("");
 
-                    Song song = new Song(title, artist, album, spotifyUrl, coverArt);
+                    Song song = new Song(title, spotifyUrl, artist, album, coverArt);
                     results.add(song);
                 }
             } catch (Exception e) {
@@ -98,5 +121,127 @@ public class SongSearchService {
             }
         }
         return results;
+    }
+
+    private List<Song> getAlbumSongs(Song song, String token){
+        List<Song> results = new ArrayList<>();
+        String albumId = song.getAlbumId();
+
+        if (token == null || token.isEmpty()) {
+            log.error("No token available for search: " + song.getTitle());
+            return results;
+        }
+
+        try{
+            int offset = 0;
+            int limit = 50;
+            boolean hasMore = true;
+
+            while (hasMore) {
+                String uri = "https://api.spotify.com/v1/albums/" + albumId
+                        + "/tracks?limit=" + limit + "&offset=" + offset;
+
+                String res = webClient
+                        .get()
+                        .uri(uri)
+                        .header("Authorization", "Bearer " + token)
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block();
+
+                if(res == null || res.isEmpty()) {
+                    log.warn("Empty response for query: " + song.getTitle());
+                    break;
+                }
+
+                JsonNode json = objectMapper.readTree(res);
+                JsonNode items = json.path("items");
+                int total = json.path("total").asInt(0);
+
+                for (JsonNode trackNode : items) {
+                    String trackId = trackNode.path("id").asText("");
+                    if(trackId.isEmpty()) {
+                        continue;
+                    }
+
+                    String title = trackNode.path("name").asText("Unknown Track");
+                    JsonNode artistArray = trackNode.path("artists");
+                    String artist = artistArray.isEmpty()
+                            ? "Unknown Artist"
+                            : artistArray.get(0).path("name").asText("Unknown Artist");
+
+                    Song savedSong = new Song(title, artist);
+
+                    savedSong.setSpotifyUrl(trackId);
+                    results.add(savedSong);
+                }
+
+                offset += limit;
+                hasMore = offset < total;
+            }
+        } catch (Exception e) {
+            log.error("Failed to album tracks for query: " + song.getTitle(), e);
+            return results;
+        }
+
+        List<List<Song>> batches = chartsService.partitionBatches(results);
+
+        for (List<Song> batch : batches) {
+            List<CompletableFuture<Void>> futures = batch
+                    .stream()
+                    .map(track -> CompletableFuture.runAsync(new Runnable() {
+                        @Override
+                        public void run() {
+                            String trackId = track.getSpotifyUrl();
+                            chartsService.fetchMetaData(track, trackId, token);
+                        }
+                    }, spotifyExe))
+                    .toList();
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+            try{
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        return results;
+
+    }
+
+    public Album getAlbumFromSong(String url) {
+        String token = spotifyAuth.getToken();
+
+        String fullUrl = "https://open.spotify.com/track/" + url;
+
+        Song song = getByUrl(fullUrl, token);
+
+        Album album = new Album();
+
+        album.setId(song.getAlbumId());
+        album.setTitle(song.getAlbum());
+        album.setArtist(song.getArtist());
+        album.setImageUrl(song.getCoverArtUrl());
+        album.setReleaseDate(song.getReleaseDate());
+
+        List<Song> albumSongs = getAlbumSongs(song, token);
+        album.setSongs(albumSongs);
+
+        int cumalativePopularity = 0;
+        double averagePopularity;
+        for(Song songs : albumSongs){
+            cumalativePopularity += songs.getPopularity();
+        }
+
+        if(cumalativePopularity > 0 && !albumSongs.isEmpty()){
+            averagePopularity = (double) cumalativePopularity / albumSongs.size();
+        } else {
+            averagePopularity = 0;
+        }
+        album.setAverageRating(averagePopularity);
+
+        return album;
     }
 }

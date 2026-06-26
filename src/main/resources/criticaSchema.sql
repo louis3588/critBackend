@@ -91,7 +91,8 @@ CREATE TABLE IF NOT EXISTS public.song (
                                            spotify_url   VARCHAR(512) UNIQUE,
                                            cover_art_url VARCHAR(512),
                                            release_date  VARCHAR(20),
-                                           popularity    INT
+                                           popularity    INT,
+                                           album_id      VARCHAR(255)
 );
 
 DROP TABLE IF EXISTS public.chart_snapshot CASCADE;
