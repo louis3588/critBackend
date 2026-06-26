@@ -51,7 +51,9 @@ public class SongSearchService {
             return songOptional.get();
         } else {
             Song song = new Song();
-            return chartsService.fetchMetaData(song, url, token);
+            int index = url.lastIndexOf("/");
+            String trackId = url.substring(index + 1);
+            return chartsService.fetchMetaData(song, trackId, token);
         }
     }
 
@@ -111,7 +113,7 @@ public class SongSearchService {
                             ? ""
                             : albumObj.path("images").get(0).path("url").asText("");
 
-                    Song song = new Song(title, artist, album, spotifyUrl, coverArt);
+                    Song song = new Song(title, spotifyUrl, artist, album, coverArt);
                     results.add(song);
                 }
             } catch (Exception e) {
@@ -211,7 +213,10 @@ public class SongSearchService {
 
     public Album getAlbumFromSong(String url) {
         String token = spotifyAuth.getToken();
-        Song song = getByUrl(url, token);
+
+        String fullUrl = "https://open.spotify.com/track/" + url;
+
+        Song song = getByUrl(fullUrl, token);
 
         Album album = new Album();
 
@@ -221,7 +226,21 @@ public class SongSearchService {
         album.setImageUrl(song.getCoverArtUrl());
         album.setReleaseDate(song.getReleaseDate());
 
-        album.setSongs(getAlbumSongs(song, token));
+        List<Song> albumSongs = getAlbumSongs(song, token);
+        album.setSongs(albumSongs);
+
+        int cumalativePopularity = 0;
+        double averagePopularity;
+        for(Song songs : albumSongs){
+            cumalativePopularity += songs.getPopularity();
+        }
+
+        if(cumalativePopularity > 0 && !albumSongs.isEmpty()){
+            averagePopularity = (double) cumalativePopularity / albumSongs.size();
+        } else {
+            averagePopularity = 0;
+        }
+        album.setAverageRating(averagePopularity);
 
         return album;
     }

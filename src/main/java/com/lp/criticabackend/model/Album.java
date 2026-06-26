@@ -68,5 +68,5 @@ public class Album {
     private String releaseDate;
     private Double averageRating;
 
-    List<Song> songs;
+    private List<Song> songs;
 }
