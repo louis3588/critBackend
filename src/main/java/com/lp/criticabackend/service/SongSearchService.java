@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lp.criticabackend.AppLogger;
 import com.lp.criticabackend.model.Album;
+import com.lp.criticabackend.model.Artist;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.repos.SongRepository;
 import com.lp.criticabackend.security.SpotifyAuth;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -123,12 +125,11 @@ public class SongSearchService {
         return results;
     }
 
-    private List<Song> getAlbumSongs(Song song, String token){
+    private List<Song> getAlbumSongs(String albumId, String token){
         List<Song> results = new ArrayList<>();
-        String albumId = song.getAlbumId();
 
         if (token == null || token.isEmpty()) {
-            log.error("No token available for search: " + song.getTitle());
+            log.error("No token available for search: " + albumId);
             return results;
         }
 
@@ -150,7 +151,7 @@ public class SongSearchService {
                         .block();
 
                 if(res == null || res.isEmpty()) {
-                    log.warn("Empty response for query: " + song.getTitle());
+                    log.warn("Empty response for query: " + albumId);
                     break;
                 }
 
@@ -180,7 +181,7 @@ public class SongSearchService {
                 hasMore = offset < total;
             }
         } catch (Exception e) {
-            log.error("Failed to album tracks for query: " + song.getTitle(), e);
+            log.error("Failed to album tracks for query: " + albumId, e);
             return results;
         }
 
@@ -226,7 +227,7 @@ public class SongSearchService {
         album.setImageUrl(song.getCoverArtUrl());
         album.setReleaseDate(song.getReleaseDate());
 
-        List<Song> albumSongs = getAlbumSongs(song, token);
+        List<Song> albumSongs = getAlbumSongs(song.getAlbumId(), token);
         album.setSongs(albumSongs);
 
         int cumalativePopularity = 0;
@@ -243,5 +244,174 @@ public class SongSearchService {
         album.setAverageRating(averagePopularity);
 
         return album;
+    }
+
+    public Artist getArtist(String artistId) {
+        String token = spotifyAuth.getToken();
+        Artist artist = new Artist();
+
+        if (token == null || token.isEmpty()) {
+            log.error("No token available for artist fetch: " + artistId);
+            return artist;
+        }
+
+        try{
+            String res = webClient
+                    .get()
+                    .uri("https://api.spotify.com/v1/artists/" + artistId)
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            if(res == null || res.isEmpty()) {
+                log.warn("Empty response for artist: " + artistId);
+                return artist;
+            }
+
+            JsonNode json = objectMapper.readTree(res);
+
+            artist.setId(artistId);
+
+            String name = json.path("name").asText("Unknown Artist");
+            artist.setName(name);
+
+            List<String> imageUrls = new ArrayList<>();
+            for(JsonNode image : json.path("images")){
+                imageUrls.add(image.path("url").asText(null));
+            }
+            artist.setImageUrls(imageUrls);
+
+            List<Album> discography = getArtistDiscography(artistId, token);
+
+            double cumulativePopularity = discography
+                    .stream()
+                    .mapToDouble(a -> a.getAverageRating() != null ? a.getAverageRating() : 0)
+                    .sum();
+            double averagePopularity = discography
+                    .isEmpty()
+                    ? 0
+                    : cumulativePopularity / discography.size();
+
+            artist.setDiscography(discography);
+            artist.setPopularity(averagePopularity);
+
+        } catch (Exception e) {
+            log.error("Failed to fetch for artist: " + artistId, e);
+        }
+        return artist;
+    }
+
+    private List<Album> getArtistDiscography(String artistId, String token){
+        List<Album> discography = new ArrayList<>();
+
+        try{
+            int offset = 0;
+            int limit = 10;
+            boolean hasMore = true;
+            List<JsonNode> albumNodes = new ArrayList<>();
+
+            while (hasMore) {
+                String res = webClient
+                        .get()
+                        .uri("https://api.spotify.com/v1/artists/" + artistId
+                                + "/albums?limit=" + limit + "&offset=" + offset)
+                        .header("Authorization", "Bearer " + token)
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block();
+
+                if(res == null || res.isEmpty()) {
+                    log.warn("Empty response for artist code : " + artistId);
+                    break;
+                }
+
+                JsonNode json = objectMapper.readTree(res);
+                JsonNode items = json.path("items");
+                int total = json.path("total").asInt(0);
+
+                for(JsonNode albumNode : items){
+                    albumNodes.add(albumNode);
+                }
+
+                offset += limit;
+                hasMore = offset < total;
+            }
+
+            List<List<JsonNode>> batches = chartsService.partitionBatches(albumNodes);
+            ConcurrentLinkedQueue<Album> albumQueue = new ConcurrentLinkedQueue<>();
+
+            for (List<JsonNode> batch : batches) {
+                List<CompletableFuture<Void>> futures = batch
+                        .stream()
+                        .map(album -> CompletableFuture.runAsync(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+
+                                    String albumId = album.path("id").asText(null);
+                                    String title = album.path("name").asText("Unknown Album");
+                                    String releaseDate = album.path("release_date").asText(null);
+
+                                    JsonNode images = album.path("images");
+                                    String imageUrl = images.isEmpty()
+                                            ? null
+                                            : images.get(0).path("url").asText(null);
+
+                                    JsonNode artistNames = album.path("artists");
+                                    String artistName = artistNames.isEmpty()
+                                            ? "Unknown Artist"
+                                            : artistNames.get(0).path("name").asText("Unknown Artist");
+
+                                    if(albumId == null || albumId.isEmpty()) {
+                                        return;
+                                    }
+
+                                    List<Song> albumSongs = getAlbumSongs(albumId, token);
+
+                                    int cumalativePopularity = albumSongs
+                                            .stream()
+                                            .mapToInt(s -> s.getPopularity() != null ? s.getPopularity() : 0)
+                                            .sum();
+
+                                    double averagePopularity = albumSongs
+                                            .isEmpty()
+                                            ? 0
+                                            : (double) cumalativePopularity / albumSongs.size();
+
+                                    Album albumObj = new Album();
+                                    albumObj.setId(albumId);
+                                    albumObj.setTitle(title);
+                                    albumObj.setArtist(artistName);
+                                    albumObj.setImageUrl(imageUrl);
+                                    albumObj.setReleaseDate(releaseDate);
+                                    albumObj.setSongs(albumSongs);
+                                    albumObj.setAverageRating(averagePopularity);
+
+                                    albumQueue.add(albumObj);
+
+                                } catch (Exception e){
+                                    log.error("Failed to build album in discography: ", e);
+                                }
+                            }
+                        }, spotifyExe))
+                        .toList();
+
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+                try{
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            discography.addAll(albumQueue);
+
+        } catch (Exception e) {
+            log.error("Failed to fetch discography for artist: " + artistId, e);
+        }
+
+        return discography;
     }
 }
