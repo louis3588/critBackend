@@ -255,10 +255,10 @@ public class ChartsService {
 
             JsonNode track = objectMapper.readTree(res);
 
+            JsonNode artists = track.path("artists");
+
             if(song == null){
                 String title = track.path("name").asText("Unknown Track");
-
-                JsonNode artists = track.path("artists");
                 String artist = artists
                         .isEmpty()
                         ? "Unknown Artist"
@@ -266,6 +266,8 @@ public class ChartsService {
 
                 song = new Song(title, artist);
             }
+
+            String artistId = artists.get(0).path("id").asText(null);
 
             JsonNode album = track.path("album");
 
@@ -292,6 +294,7 @@ public class ChartsService {
             song.setReleaseDate(album.path("release_date").asText(null));
             song.setPopularity(track.path("popularity").asInt(0));
             song.setAlbumId(album.path("id").asText(null));
+            song.setArtistId(artistId);
 
         } catch (WebClientResponseException.TooManyRequests e) {
 

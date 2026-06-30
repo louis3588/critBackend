@@ -1,6 +1,7 @@
 package com.lp.criticabackend.controller;
 
 import com.lp.criticabackend.model.Album;
+import com.lp.criticabackend.model.Artist;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.service.SongSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,5 +38,14 @@ public class SearchController {
         } else {
             return ResponseEntity.ok(album);
         }
+    }
+
+    @GetMapping("/artist/{artistId}")
+    public ResponseEntity<?> getArtist(@PathVariable String artistId) {
+        Artist artist = songSearchService.getArtist(artistId);
+        if (artist == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(artist);
     }
 }

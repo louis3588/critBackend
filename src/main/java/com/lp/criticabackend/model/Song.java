@@ -86,4 +86,12 @@ public class Song {
     public void setAlbumId(String albumId) {
         this.albumId = albumId;
     }
+
+    public String getArtistId() {
+        return artistId;
+    }
+
+    public void setArtistId(String artistId) {
+        this.artistId = artistId;
+    }
 }
