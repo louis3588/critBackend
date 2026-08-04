@@ -3,6 +3,7 @@ package com.lp.criticabackend.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lp.criticabackend.AppLogger;
+import com.lp.criticabackend.model.ArtistSongStats;
 import com.lp.criticabackend.model.ChartItem;
 import com.lp.criticabackend.model.ChartSnapshot;
 import com.lp.criticabackend.model.Song;
@@ -124,6 +125,62 @@ public class ChartsService {
                 .toList();
 
         return names.isEmpty() ? "Unknown Artist" : names.get(0);
+    }
+
+    public List<ArtistSongStats> getArtistSongStats(String artistId){
+        List<ArtistSongStats> stats = new ArrayList<>();
+
+        try{
+            String url = "https://kworb.net/spotify/artist/" + artistId + "_songs.html";
+
+            String html = webClient
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            if(html == null || html.isEmpty()){
+                log.warn("Failed to fetch artist stats " + artistId);
+                return stats;
+            }
+
+            Document doc = Jsoup.parse(html);
+            Element table = doc.selectFirst("table.sortable");
+
+            if(table == null){
+                log.error("Failed to fetch artist stats " + artistId);
+                return stats;
+            }
+
+            Elements rows = table.select("tbody tr");
+            for(Element row : rows){
+                try{
+                    Element titleCell = row.selectFirst("td.text");
+                    if (titleCell == null) continue;
+
+                    Element link = titleCell.selectFirst("a[href]");
+                    if(link == null) continue;
+
+                    String spotifyUrl = link.attr("href");
+                    String title = link.text().trim();
+
+                    Elements cells = row.select("td");
+                    if(cells.size() < 3) continue;
+
+                    Long totalStreams = parseGainSafe(cells.get(1).text());
+                    Long dailyStreams = parseGainSafe(cells.get(2).text());
+
+                    ArtistSongStats stat = new ArtistSongStats(spotifyUrl, title, totalStreams, dailyStreams);
+                    stats.add(stat);
+                } catch (Exception e) {
+                    log.warn("Skipping malformed row: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch artist song stats for: " + artistId,  e);
+        }
+        return stats;
     }
 
     private List<ChartItem> parseChartItems(String html){

@@ -2,7 +2,9 @@ package com.lp.criticabackend.controller;
 
 import com.lp.criticabackend.model.Album;
 import com.lp.criticabackend.model.Artist;
+import com.lp.criticabackend.model.ArtistSongStats;
 import com.lp.criticabackend.model.Song;
+import com.lp.criticabackend.service.ChartsService;
 import com.lp.criticabackend.service.SongSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +16,12 @@ import java.util.List;
 @RequestMapping("/api/search")
 public class SearchController {
 
+    @Autowired
+    private final ChartsService chartsService;
     private final SongSearchService songSearchService;
 
-    public SearchController(SongSearchService songSearchService) {
+    public SearchController(ChartsService chartsService, SongSearchService songSearchService) {
+        this.chartsService = chartsService;
         this.songSearchService = songSearchService;
     }
 
@@ -57,5 +62,15 @@ public class SearchController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(artist);
+    }
+
+    @GetMapping("/artist/{artistId}/stats")
+    public ResponseEntity<?> getArtistSongStats(@PathVariable String artistId) {
+        List<ArtistSongStats> stats = chartsService.getArtistSongStats(artistId);
+        if (stats == null || stats.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }else {
+            return ResponseEntity.ok(stats);
+        }
     }
 }
