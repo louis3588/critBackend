@@ -3,11 +3,11 @@ package com.lp.criticabackend.model;
 import java.util.List;
 
 public class Artist {
-    String id;
-    String name;
-    List<String> imageUrls;
-    List<Album> discography;
-    Double popularity;
+    private String id;
+    private String name;
+    private List<String> imageUrls;
+    private List<Album> discography;
+    private Double popularity;
 
     public String getId() {
         return id;

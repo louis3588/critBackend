@@ -30,10 +30,20 @@ public class SearchController {
         }
     }
 
-    @GetMapping("/album/{songUrl}")
-    public ResponseEntity<?> searchByAlbum(@PathVariable String songUrl) {
+    @GetMapping("/album/song/{songUrl}")
+    public ResponseEntity<?> searchAlbumBySong(@PathVariable String songUrl) {
         Album album = songSearchService.getAlbumFromSong(songUrl);
         if (album == null || album.getSongs().isEmpty()) {
+            return ResponseEntity.notFound().build();
+        } else {
+            return ResponseEntity.ok(album);
+        }
+    }
+
+    @GetMapping("/album/id/{albumId}")
+    public ResponseEntity<?> searchAlbumById(@PathVariable String albumId){
+        List<Song> album = songSearchService.parseAlbumSafe(albumId);
+        if (album == null || album.isEmpty()) {
             return ResponseEntity.notFound().build();
         } else {
             return ResponseEntity.ok(album);

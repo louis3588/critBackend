@@ -278,11 +278,6 @@ public class ChartsService {
             );
 
             song.setAlbum(album.path("name").asText(null));
-            String albumString = album.path("name").asText(null);
-
-            if (albumString != null) {
-                log.debug("Found album: " + albumString);
-            }
             JsonNode images = album.path("images");
 
             if (!images.isEmpty()) {
