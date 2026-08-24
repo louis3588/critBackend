@@ -3,7 +3,7 @@ package com.lp.criticabackend.security;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lp.criticabackend.AppLogger;
-import com.lp.criticabackend.util.WebUtil;
+import com.lp.criticabackend.security.util.WebUtil;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;

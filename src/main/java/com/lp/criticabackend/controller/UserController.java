@@ -2,7 +2,7 @@ package com.lp.criticabackend.controller;
 
 import com.lp.criticabackend.model.User;
 import com.lp.criticabackend.repos.UserRepository;
-import com.lp.criticabackend.security.SessionUtil;
+import com.lp.criticabackend.security.util.SessionUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;

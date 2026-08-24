@@ -8,7 +8,7 @@ import com.lp.criticabackend.model.Artist;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.repos.SongRepository;
 import com.lp.criticabackend.security.SpotifyAuth;
-import com.lp.criticabackend.util.WebUtil;
+import com.lp.criticabackend.security.util.WebUtil;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,8 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

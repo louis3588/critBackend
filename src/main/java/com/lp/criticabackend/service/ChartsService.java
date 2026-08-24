@@ -8,7 +8,7 @@ import com.lp.criticabackend.model.ChartItem;
 import com.lp.criticabackend.model.ChartSnapshot;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.security.SpotifyAuth;
-import com.lp.criticabackend.util.WebUtil;
+import com.lp.criticabackend.security.util.WebUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;

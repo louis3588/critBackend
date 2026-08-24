@@ -1,4 +1,4 @@
-package com.lp.criticabackend.util;
+package com.lp.criticabackend.security.util;
 
 import com.lp.criticabackend.AppLogger;
 import io.netty.channel.ChannelOption;
