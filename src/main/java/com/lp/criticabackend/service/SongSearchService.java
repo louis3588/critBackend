@@ -6,6 +6,8 @@ import com.lp.criticabackend.AppLogger;
 import com.lp.criticabackend.model.Album;
 import com.lp.criticabackend.model.Artist;
 import com.lp.criticabackend.model.Song;
+import com.lp.criticabackend.model.request.ArtistSearchResponse;
+import com.lp.criticabackend.model.request.ArtistSearchResult;
 import com.lp.criticabackend.repos.SongRepository;
 import com.lp.criticabackend.security.SpotifyAuth;
 import com.lp.criticabackend.security.util.WebUtil;
@@ -19,8 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
 
 @Service
 public class SongSearchService {
@@ -32,7 +33,6 @@ public class SongSearchService {
     private static final AppLogger log = AppLogger.getLogger(SongSearchService.class);
     private static final HttpClient httpClient = WebUtil.httpClient();
     private final ChartsService chartsService;
-    private final ExecutorService spotifyExe = Executors.newFixedThreadPool(5);
 
 
     public SongSearchService(SpotifyAuth spotifyAuth, SongRepository songRepository, ChartsService chartsService) {
@@ -130,10 +130,19 @@ public class SongSearchService {
             return new ArrayList<>();
         }
 
-        return getAlbumSongs(albumId, token);
+        List<Song> albumSongs = getAlbumSongs(albumId, token);
+        List<Song> enrichedSongsList = new ArrayList<>();
+        for(Song song : albumSongs){
+            String songId = song
+                    .getSpotifyUrl()
+                    .split("/track/")[1];
+            Song enrichedSong = chartsService.fetchMetaData(song, songId, token);
+            enrichedSongsList.add(enrichedSong);
+        }
+
+        return enrichedSongsList;
     }
 
-    //album coverart, releaseDate, popularity
     private List<Song> getAlbumSongs(String albumId, String token){
         List<Song> results = new ArrayList<>();
 
@@ -216,6 +225,63 @@ public class SongSearchService {
 
         return results;
 
+    }
+
+    public ArtistSearchResponse searchArtistByQuery(String query, int offset, int limit){
+        String token = spotifyAuth.getToken();
+        List<ArtistSearchResult> results = new ArrayList<>();
+
+        if (token == null || token.isEmpty()) {
+            log.error("No token available for search: " + query);
+            return new ArtistSearchResponse(results, 0, offset, limit);
+        }
+
+        try{
+
+            String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
+            String searchUri = "https://api.spotify.com/v1/search?q=" + encodedQuery
+                    + "&type=artist&limit=" + limit+ "&offset=" + offset;
+
+            String res = webClient
+                    .get()
+                    .uri(searchUri)
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            if(res == null || res.isEmpty()) {
+                log.warn("Empty response for query: " + query);
+                return new ArtistSearchResponse(results, 0, offset, limit);
+            }
+
+            JsonNode json = objectMapper.readTree(res);
+            JsonNode artists = json.path("artists");
+            JsonNode items = artists.path("items");
+            int total = artists.path("total").asInt(0);
+
+            for(JsonNode artistNode : items){
+                String artistId = artistNode.path("id").asText(null);
+                if (artistId == null) continue;
+
+                String name = artistNode.path("name").asText(null);
+                List<String> imageUrls = new ArrayList<>();
+                for(JsonNode imageNode : artistNode.path("images")){
+                    String imageUrl = imageNode.path("url").asText(null);
+                    if(imageUrl != null){
+                        imageUrls.add(imageUrl);
+                    }
+                }
+
+                results.add(new ArtistSearchResult(artistId, name, imageUrls));
+            }
+
+            return new ArtistSearchResponse(results, total, offset, limit);
+
+        } catch (Exception e) {
+            log.error("Failed to search for query: " + query, e);
+            return new ArtistSearchResponse(results, 0, offset, limit);
+        }
     }
 
     public Album getAlbumFromSong(String url) {

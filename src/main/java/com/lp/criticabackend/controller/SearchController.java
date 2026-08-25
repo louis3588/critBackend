@@ -4,6 +4,7 @@ import com.lp.criticabackend.model.Album;
 import com.lp.criticabackend.model.Artist;
 import com.lp.criticabackend.model.ArtistSongStats;
 import com.lp.criticabackend.model.Song;
+import com.lp.criticabackend.model.request.ArtistSearchResponse;
 import com.lp.criticabackend.service.ChartsService;
 import com.lp.criticabackend.service.SongSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +27,29 @@ public class SearchController {
     }
 
     @GetMapping("/song")
-    public ResponseEntity<?> search(@RequestParam String query, @RequestParam String limit) {
+    public ResponseEntity<?> searchSong(@RequestParam String query, @RequestParam String limit) {
         List<Song> results = songSearchService.search(query, limit);
         if (results.isEmpty()) {
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.ok(results);
         }
+    }
+
+    //for homepage search
+    @GetMapping("/artistsquery")
+    public ResponseEntity<?> searchArtistByQuery(@RequestParam String query, @RequestParam(defaultValue = "0") int offset, @RequestParam(defaultValue = "10") int limit) {
+        if(query == null || query.trim().length() < 3) {
+            return ResponseEntity.noContent().build();
+        }
+
+        ArtistSearchResponse result = songSearchService.searchArtistByQuery(query, offset, limit);
+        if(result == null) {
+            return ResponseEntity.noContent().build();
+        }else{
+            return ResponseEntity.ok(result);
+        }
+
     }
 
     @GetMapping("/album/song/{songUrl}")
