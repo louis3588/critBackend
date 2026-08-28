@@ -7,6 +7,7 @@ import com.lp.criticabackend.model.ArtistSongStats;
 import com.lp.criticabackend.model.ChartItem;
 import com.lp.criticabackend.model.ChartSnapshot;
 import com.lp.criticabackend.model.Song;
+import com.lp.criticabackend.repos.SongRepository;
 import com.lp.criticabackend.security.SpotifyAuth;
 import com.lp.criticabackend.security.util.WebUtil;
 import org.jsoup.Jsoup;
@@ -23,6 +24,7 @@ import reactor.netty.http.client.HttpClient;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,10 +39,12 @@ public class ChartsService {
     private static final HttpClient httpClient = WebUtil.httpClient();
     private final SpotifyAuth spotifyAuth;
     private final ExecutorService spotifyExe = Executors.newFixedThreadPool(5);
+    private final SongRepository songRepository;
 
 
-    public ChartsService(SpotifyAuth spotifyAuth) {
+    public ChartsService(SpotifyAuth spotifyAuth, SongRepository songRepository) {
         this.spotifyAuth = spotifyAuth;
+        this.songRepository = songRepository;
         this.webClient = WebClient
                 .builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
@@ -181,6 +185,15 @@ public class ChartsService {
             log.error("Failed to fetch artist song stats for: " + artistId,  e);
         }
         return stats;
+    }
+
+    public Optional<ArtistSongStats> getSongStats(String artistId, String spotifyUrl) {
+        List<ArtistSongStats> stats = getArtistSongStats(artistId);
+
+        return stats
+                .stream()
+                .filter(s -> s.getSpotifyUrl().equals(spotifyUrl))
+                .findFirst();
     }
 
     private List<ChartItem> parseChartItems(String html){

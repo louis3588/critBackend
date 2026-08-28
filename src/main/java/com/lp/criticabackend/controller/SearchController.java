@@ -37,7 +37,7 @@ public class SearchController {
     }
 
     //for homepage search
-    @GetMapping("/artistsquery")
+    @GetMapping("/artists")
     public ResponseEntity<?> searchArtistByQuery(@RequestParam String query, @RequestParam(defaultValue = "0") int offset, @RequestParam(defaultValue = "10") int limit) {
         if(query == null || query.trim().length() < 3) {
             return ResponseEntity.noContent().build();
@@ -81,13 +81,4 @@ public class SearchController {
         return ResponseEntity.ok(artist);
     }
 
-    @GetMapping("/artist/{artistId}/stats")
-    public ResponseEntity<?> getArtistSongStats(@PathVariable String artistId) {
-        List<ArtistSongStats> stats = chartsService.getArtistSongStats(artistId);
-        if (stats == null || stats.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }else {
-            return ResponseEntity.ok(stats);
-        }
-    }
 }

@@ -17,6 +17,8 @@ public class ArtistSongStats {
         return spotifyUrl;
     }
 
+
+
     public void setSpotifyUrl(String spotifyUrl) {
         this.spotifyUrl = spotifyUrl;
     }
