@@ -15,7 +15,15 @@ public class ArtistSearchResult {
         this.imageUrls = imageUrls;
     }
 
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public List<String> getImageUrls() { return imageUrls;}
+    public String getId() {
+        return id;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+}

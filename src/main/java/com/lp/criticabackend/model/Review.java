@@ -1,7 +1,6 @@
 package com.lp.criticabackend.model;
 
 import jakarta.persistence.*;
-
 @Entity
 @Table(name = "reviews")
 public class Review {

@@ -1,5 +1,6 @@
 package com.lp.criticabackend.service;
 
+import com.lp.criticabackend.AppLogger;
 import com.lp.criticabackend.model.Review;
 import com.lp.criticabackend.model.User;
 import com.lp.criticabackend.repos.ReviewRepository;
@@ -16,6 +17,7 @@ import java.util.Optional;
 @Service
 public class ReviewService {
 
+    private static final AppLogger logger = AppLogger.getLogger(ReviewService.class);
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
 
@@ -84,5 +86,20 @@ public class ReviewService {
                 .filter(r -> r.getUser() != null && r.getUser().getIdusers().equals(user.getIdusers()))
                 .toList()).orElseGet(ArrayList::new);
 
+    }
+
+    public List<Review> getReviewBySong(String username, String songId) {
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if(userOpt.isPresent()){
+            User user = userOpt.get();
+            List<Review> reviews = reviewRepository.findReviewsByUser(user);
+            return reviews
+                    .stream()
+                    .filter(r -> r.getSongId().equalsIgnoreCase(songId))
+                    .toList();
+        } else {
+            logger.warn("No user logged in, failed to get username");
+            return new ArrayList<>();
+        }
     }
 }

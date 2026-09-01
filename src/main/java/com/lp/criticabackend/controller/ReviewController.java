@@ -28,6 +28,17 @@ public class ReviewController {
         }
     }
 
+    @GetMapping("/song")
+    public ResponseEntity<?> getReviewBySongId(@RequestParam String songId, @RequestParam String username) {
+        List<Review> reviews = reviewService.getReviewBySong(username, songId);
+        if(reviews.isEmpty()){
+            return ResponseEntity.noContent().build();
+        } else {
+            Review review = reviews.get(0);
+            return ResponseEntity.ok(review);
+        }
+    }
+
     @PostMapping("/{username}")
     public ResponseEntity<Review> createReview(@RequestBody Review review, @PathVariable String username) {
         Review saved = reviewService.save(review, username);

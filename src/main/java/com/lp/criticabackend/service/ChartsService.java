@@ -39,12 +39,10 @@ public class ChartsService {
     private static final HttpClient httpClient = WebUtil.httpClient();
     private final SpotifyAuth spotifyAuth;
     private final ExecutorService spotifyExe = Executors.newFixedThreadPool(5);
-    private final SongRepository songRepository;
 
 
-    public ChartsService(SpotifyAuth spotifyAuth, SongRepository songRepository) {
+    public ChartsService(SpotifyAuth spotifyAuth) {
         this.spotifyAuth = spotifyAuth;
-        this.songRepository = songRepository;
         this.webClient = WebClient
                 .builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
