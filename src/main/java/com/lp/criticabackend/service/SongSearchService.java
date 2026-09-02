@@ -8,6 +8,7 @@ import com.lp.criticabackend.model.Artist;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.model.request.ArtistSearchResponse;
 import com.lp.criticabackend.model.request.ArtistSearchResult;
+import com.lp.criticabackend.model.request.SongSearchResponse;
 import com.lp.criticabackend.repos.SongRepository;
 import com.lp.criticabackend.security.SpotifyAuth;
 import com.lp.criticabackend.security.util.WebUtil;
@@ -57,19 +58,18 @@ public class SongSearchService {
         }
     }
 
-    public List<Song> search(String query, String limit) {
+    public SongSearchResponse search(String query, int offset, int limit) {
         List<Song> results = new ArrayList<>();
         String token = spotifyAuth.getToken();
 
         if (token == null || token.isEmpty()) {
             log.error("No token available for search");
-            return results;
+            return new SongSearchResponse(results, 0, offset, limit);
         } else {
-
             try{
                 String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
                 String searchUri = "https://api.spotify.com/v1/search?q=" + encodedQuery
-                        + "&type=track&limit=" + limit;
+                        + "&type=track&limit=" + limit+ "&offset=" + offset;
 
                 String res = webClient
                         .get()
@@ -81,11 +81,17 @@ public class SongSearchService {
 
                 if(res == null || res.isEmpty()) {
                     log.warn("Empty response for query: " + query);
-                    return results;
+                    return new SongSearchResponse(results, 0, offset, limit);
                 }
 
                 JsonNode json = objectMapper.readTree(res);
-                JsonNode items = json.path("tracks").path("items");
+                JsonNode tracks = json.get("tracks");
+
+                int newLimit = tracks.path("limit").asInt(limit);
+                int newOffset = tracks.path("offset").asInt(offset);
+                int total = tracks.path("total").asInt(0);
+
+                JsonNode items = tracks.path("items");
 
                 for (JsonNode track : items) {
                     if(!track.path("type").asText().equalsIgnoreCase("track")) {
@@ -116,11 +122,14 @@ public class SongSearchService {
                     Song song = new Song(title, spotifyUrl, artist, album, coverArt);
                     results.add(song);
                 }
+
+                return new SongSearchResponse(results, total, newOffset, newLimit);
             } catch (Exception e) {
                 log.error("Failed to search for query: " + query, e);
+                return new SongSearchResponse(results, 0, offset, limit);
             }
         }
-        return results;
+
     }
 
     public List<Song> parseAlbumSafe(String albumId){

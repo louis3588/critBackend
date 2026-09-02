@@ -5,6 +5,7 @@ import com.lp.criticabackend.model.Artist;
 import com.lp.criticabackend.model.ArtistSongStats;
 import com.lp.criticabackend.model.Song;
 import com.lp.criticabackend.model.request.ArtistSearchResponse;
+import com.lp.criticabackend.model.request.SongSearchResponse;
 import com.lp.criticabackend.service.ChartsService;
 import com.lp.criticabackend.service.SongSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,21 +19,19 @@ import java.util.List;
 public class SearchController {
 
     @Autowired
-    private final ChartsService chartsService;
     private final SongSearchService songSearchService;
 
-    public SearchController(ChartsService chartsService, SongSearchService songSearchService) {
-        this.chartsService = chartsService;
+    public SearchController(SongSearchService songSearchService) {
         this.songSearchService = songSearchService;
     }
 
     @GetMapping("/song")
-    public ResponseEntity<?> searchSong(@RequestParam String query, @RequestParam String limit) {
-        List<Song> results = songSearchService.search(query, limit);
-        if (results.isEmpty()) {
+    public ResponseEntity<?> searchSong(@RequestParam String query, @RequestParam(defaultValue = "0") int offset, @RequestParam(defaultValue = "10") int limit) {
+        SongSearchResponse response = songSearchService.search(query, offset, limit);
+        if (response == null) {
             return ResponseEntity.noContent().build();
         } else {
-            return ResponseEntity.ok(results);
+            return ResponseEntity.ok(response);
         }
     }
 

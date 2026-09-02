@@ -31,6 +31,8 @@ public class UserController {
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         if (userRepo.findByEmail(user.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("Email already in use.");
+        } else if(userRepo.findByUsername(user.getUsername()).isPresent()) {
+            return ResponseEntity.badRequest().body("Username already in use.");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
