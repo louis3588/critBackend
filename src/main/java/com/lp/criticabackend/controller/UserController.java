@@ -2,7 +2,7 @@ package com.lp.criticabackend.controller;
 
 import com.lp.criticabackend.model.User;
 import com.lp.criticabackend.repos.UserRepository;
-import com.lp.criticabackend.security.SessionUtil;
+import com.lp.criticabackend.security.util.SessionUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +31,8 @@ public class UserController {
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         if (userRepo.findByEmail(user.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("Email already in use.");
+        } else if(userRepo.findByUsername(user.getUsername()).isPresent()) {
+            return ResponseEntity.badRequest().body("Username already in use.");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));

@@ -36,6 +36,8 @@ public class Song {
     @Column(name = "album_id")
     private String albumId;
 
+    @Column(name = "artist_id")
+    private String artistId;
     // --- Constructors ---
 
     public Song() {}
@@ -83,5 +85,13 @@ public class Song {
 
     public void setAlbumId(String albumId) {
         this.albumId = albumId;
+    }
+
+    public String getArtistId() {
+        return artistId;
+    }
+
+    public void setArtistId(String artistId) {
+        this.artistId = artistId;
     }
 }
