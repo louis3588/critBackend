@@ -2,7 +2,7 @@ package com.lp.criticabackend.model.request;
 
 import java.util.List;
 
-public class ArtistSearchResponse extends SearchReponse{
+public class ArtistSearchResponse extends SearchResponse{
     private List<ArtistSearchResult> artists;
 
 

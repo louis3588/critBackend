@@ -5,7 +5,7 @@ import com.lp.criticabackend.model.Song;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SongSearchResponse extends SearchReponse{
+public class SongSearchResponse extends SearchResponse{
 
     private List<Song> songs;
 

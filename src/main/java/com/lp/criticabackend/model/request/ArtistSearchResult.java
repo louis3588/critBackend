@@ -23,7 +23,4 @@ public class ArtistSearchResult {
         return name;
     }
 
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
 }
