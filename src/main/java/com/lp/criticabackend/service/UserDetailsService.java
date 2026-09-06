@@ -5,7 +5,6 @@ import com.lp.criticabackend.model.UserDetails;
 import com.lp.criticabackend.repos.UserDetailsRepository;
 import com.lp.criticabackend.repos.UserRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.Optional;
 
@@ -14,11 +13,11 @@ public class UserDetailsService {
 
     private final UserRepository userRepository;
     private final UserDetailsRepository userDetailsRepository;
-
     public UserDetailsService(UserRepository userRepository, UserDetailsRepository userDetailsRepository) {
         this.userRepository = userRepository;
         this.userDetailsRepository = userDetailsRepository;
     }
+
 
     public User getUserByEmail(String username){
         return userRepository.findByUsername(username).orElseThrow(

@@ -1,6 +1,5 @@
 package com.lp.criticabackend.controller;
 
-import com.lp.criticabackend.model.User;
 import com.lp.criticabackend.model.UserDetails;
 import com.lp.criticabackend.service.UserDetailsService;
 import org.springframework.http.ResponseEntity;

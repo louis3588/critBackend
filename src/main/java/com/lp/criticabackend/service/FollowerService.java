@@ -10,6 +10,7 @@ import com.lp.criticabackend.repos.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,7 @@ public class FollowerService {
         follow.setFollower(follower);
         follow.setFollowing(followed);
         follow.setStatus(FollowStatus.PENDING);
+        follow.setCreatedAt(LocalDate.now());
 
         return followRepo.save(follow);
     }
@@ -96,7 +98,7 @@ public class FollowerService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return followRepo
-                .findByFollowerAndStatus(user, FollowStatus.PENDING)
+                .findByFollowingAndStatus(user, FollowStatus.PENDING)
                 .stream()
                 .map(Follow::getFollower)
                 .collect(Collectors.toList());
@@ -148,7 +150,7 @@ public class FollowerService {
             Optional<UserDetails> details = userDetails.getDetails(username);
             response.put(user.getUsername(), sanitisedUser(user));
             if(details.isPresent()) {
-                String detailsHeader = username + " details";
+                String detailsHeader = username + "_details";
                 response.put(detailsHeader, details.get());
             }
         }
@@ -156,8 +158,9 @@ public class FollowerService {
         return ResponseEntity.ok(response);
     }
 
-    private User sanitisedUser(User user){
+    public User sanitisedUser(User user){
         User sanitised = new User();
+        sanitised.setIdusers(user.getIdusers());
         sanitised.setUsername(user.getUsername());
         sanitised.setEmail(user.getEmail());
         sanitised.setFirstName(user.getFirstName());

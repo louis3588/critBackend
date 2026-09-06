@@ -35,7 +35,17 @@ public class SearchController {
         }
     }
 
-    //for homepage search
+    @GetMapping("/songid/{songId}")
+    public ResponseEntity<?> getSongById(@PathVariable String songId) {
+        Song song = songSearchService.getBySongId(songId);
+        if(song == null) {
+            return ResponseEntity.notFound().build();
+        } else {
+            return ResponseEntity.ok(song);
+        }
+    }
+
+
     @GetMapping("/artists")
     public ResponseEntity<?> searchArtistByQuery(@RequestParam String query, @RequestParam(defaultValue = "0") int offset, @RequestParam(defaultValue = "10") int limit) {
         if(query == null || query.trim().length() < 3) {

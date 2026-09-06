@@ -46,6 +46,12 @@ public class SongSearchService {
                 .build();
     }
 
+    public Song getBySongId(String songId) {
+        String url = "https://open.spotify.com/track/" + songId;
+        String token = spotifyAuth.getToken();
+        return getByUrl(url, token);
+    }
+
     private Song getByUrl(String url, String token) {
         Optional<Song> songOptional = songRepository.findSongBySpotifyUrl(url);
         if (songOptional.isPresent()) {
