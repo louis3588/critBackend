@@ -1,7 +1,6 @@
 package com.lp.criticabackend.controller;
 
-import com.lp.criticabackend.model.Review;
-import com.lp.criticabackend.repos.ReviewRepository;
+import com.lp.criticabackend.model.review.Review;
 import com.lp.criticabackend.service.ReviewService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

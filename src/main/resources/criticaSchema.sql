@@ -118,3 +118,21 @@ CREATE TABLE IF NOT EXISTS public.chart_item (
                                                  total_streams     BIGINT
 );
 
+
+DROP TABLE IF EXISTS public.review_likes CASCADE;
+CREATE TABLE public.review_likes (
+                              id SERIAL PRIMARY KEY,
+                              review_id INT NOT NULL REFERENCES public.reviews(idreviews) ON DELETE CASCADE,
+                              user_id INT NOT NULL REFERENCES public.users(idusers) ON DELETE CASCADE,
+                              created_at TIMESTAMP,
+                              UNIQUE(review_id, user_id)
+);
+
+DROP TABLE IF EXISTS public.review_comments CASCADE;
+CREATE TABLE public.review_comments (
+                                        id SERIAL PRIMARY KEY,
+                                        review_id INT NOT NULL REFERENCES public.reviews(idreviews) ON DELETE CASCADE,
+                                        user_id INT NOT NULL REFERENCES public.users(idusers) ON DELETE CASCADE,
+                                        content TEXT NOT NULL,
+                                        created_at TIMESTAMP
+)

@@ -1,7 +1,7 @@
 package com.lp.criticabackend.service;
 
 import com.lp.criticabackend.AppLogger;
-import com.lp.criticabackend.model.Review;
+import com.lp.criticabackend.model.review.Review;
 import com.lp.criticabackend.model.User;
 import com.lp.criticabackend.repos.ReviewRepository;
 import com.lp.criticabackend.repos.UserRepository;
